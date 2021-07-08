@@ -51,12 +51,3 @@ unmet_dom = unmet - unmet_ag;
 yield = release;
 
 end
-
-% First we will update reservoir operations through a deterministic dynamic
-% programming (DDP) approach. To use the previously simulated time series,
-% load('runoff_by_state_Mar16_knnboot_1t'). This data file contains preliminary
-% simulations of time series for runoff (runoff), precipitation (P_ts), and temperature
-% (T_ts). For initial DDP, we will consider only one of simulated conditions
-% for P_ts and T_ts yielding inflow into the reservoir (runoff) and assume
-% this scenario to be certain. SDP in comparison will consider many
-% scenarios given uncertainty (worry about this later).
