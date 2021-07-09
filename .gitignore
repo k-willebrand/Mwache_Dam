@@ -29,4 +29,8 @@ BMA_code/BMA_results_RCP85_2020-11-11.mat
 BMA_code/BMA_results_RCP45_2020-11-11.mat
 BMA_code/BMA_results_RCP45_2020-11-10.mat
 
+Plots/Bayesian plot utilities/*
+Plots/plotting utilities/*
+Plots/JSPlots/*
+
 Icon
