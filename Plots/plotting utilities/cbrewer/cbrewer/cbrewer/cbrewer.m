@@ -44,7 +44,7 @@ function [colormap]=cbrewer(ctype, cname, ncol, interp_method)
 
 
 % load colorbrewer data
-load('colorbrewer.mat')
+load('Plots/plotting utilities/cbrewer/cbrewer/cbrewer/colorbrewer.mat')
 % initialise the colormap is there are any problems
 colormap=[];
 if (~exist('interp_method', 'var'))

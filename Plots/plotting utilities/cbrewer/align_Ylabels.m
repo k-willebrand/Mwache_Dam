@@ -148,4 +148,3 @@ end
 %Your contribution towards improving this template will be acknowledged in
 %the "Changes" section of the TEMPLATE_HEADER web page on the Matlab
 %Central File Exchange
- 
