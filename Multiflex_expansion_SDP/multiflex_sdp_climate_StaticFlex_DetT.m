@@ -150,7 +150,7 @@ runParam.desalOn = false;
 runParam.desalCapacity = [60 80];
 
 % If using pre-saved runoff time series, name of .mat file to load
-runParam.runoffLoadName = 'runoff_by_state_DetTemp_Mar16_knnboot_1t';
+runParam.runoffLoadName = 'runoff_by_state_June16_knnboot_1t';
 
 % If true, save results
 runParam.saveOn = false;
