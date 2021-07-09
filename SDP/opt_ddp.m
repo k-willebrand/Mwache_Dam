@@ -57,7 +57,11 @@ for t = 1:n
         K_state = discr_K(k); %define current possible effective storage state
         
         % define minimum and maximum possible releases
-        min_release = 0; % limit the minimum release to 0 (or env_flow?)
+        if K_state > eff_storage
+            min_release = (K_state-eff_storage)/delta;
+        else
+            min_release = 0; % limit the minimum release to 0 (or env_flow?)
+        end
         %max_release = K_state+q_now; % limit max release to current storage + net inflow
         max_release = K_state/delta+q_now; % MCM/Y
         
@@ -79,10 +83,10 @@ for t = 1:n
             if poss_release(i)>=targ_release
                 poss_costs(1,i) = 0; 
             else % insufficient release, domestic demand is met first
-                poss_unmet = max((targ_release - poss_release)*delta, 0); % MCM
-                poss_unmet_ag = min(poss_unmet, targ_dmd_ag*delta); % MCM
-                poss_unmet_dom = poss_unmet - poss_unmet_ag; % MCM
-                poss_costs(1,i) = (costParam.domShortage*(poss_unmet_dom(i))^2 +costParam.agShortage*(poss_unmet_ag(i))^2)*1E6;
+                poss_unmet = max((targ_release - poss_release)*delta*1E6, 0); % CM
+                poss_unmet_ag = min(poss_unmet, targ_dmd_ag*delta*1E6); % CM
+                poss_unmet_dom = poss_unmet - poss_unmet_ag; % CM
+                poss_costs(1,i) = costParam.domShortage*(poss_unmet_dom(i))^2 +costParam.agShortage*(poss_unmet_ag(i))^2;
             end
         end
         % STORE POSSIBLE SHORTAGE COSTS FOR STATE (k) AND PERIOD (t)

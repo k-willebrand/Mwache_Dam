@@ -44,7 +44,7 @@ desalsupply = zeros(numRuns,numYears*12);
 eff_storage = storage - dead_storage; %should have [60, 100]
 
 [E]  = evaporation_sdp(storage, T, P, climParam, runParam);
-net_inflow = inflow-env_flow-E;
+net_inflow = inflow-env_flow-E; % MCM/Y
 %K0 = eff_storage; % assume reservoir storage is initially full
 K0 = 30; % MCM - assume constant initial storage
 
@@ -58,8 +58,8 @@ end
 delta = 1/12; % time step in years
 yield_mdl = release;
 %unmet_mdl = max(demand - release - desalsupply, 0);
-unmet_mdl = max((demand - release - desalsupply)*delta, 0); % MCM
-unmet_ag_mdl = min(unmet_mdl, dmd_ag*delta); % MCM
+unmet_mdl = max((demand - release - desalsupply)*delta*1E6, 0); % MCM
+unmet_ag_mdl = min(unmet_mdl, dmd_ag*delta*1E6); % MCM
 unmet_dom_mdl = unmet_mdl - unmet_ag_mdl; % MCM
 
 unmet_ag = mean(sum(unmet_ag_mdl,2));
@@ -71,7 +71,7 @@ yield = mean(sum(yield_mdl,2));
 % Calculate shortage costs incurred for unmet demand, using
 % differentiated costs for agriculture and domestic shortages and
 % quadratic formulation
-shortageCost =  (unmet_ag_squared * costParam.agShortage + unmet_dom_squared * costParam.domShortage) * 1E6;
+shortageCost =  unmet_ag_squared * costParam.agShortage + unmet_dom_squared * costParam.domShortage;
 
 savename_shortageCost = strcat('reservoir_results/cluster_shortage_costs_st',num2str(index_s_t),'_sp',num2str(index_s_p),'_s',num2str(storage),'_', date)
 %save(savename_shortageCost, 'shortageCost', 'yield', 'unmet_ag', 'unmet_dom', 'unmet_ag_squared', 'unmet_dom_squared')

@@ -43,7 +43,7 @@ date = '07012021'; % set date for save name
 
 % If true, then use climate adaptive inflow distributions in the SDP.
 % If false, use non-adaptive inflow distribution in the SDP.
-runParam.adaptiveOps = true;
+runParam.adaptiveOps = false;
         
 s_T_abs = [26.25, 26.75, 27.25, 27.95, 28.8];
 s_P_abs = 66:1:97;
@@ -54,7 +54,7 @@ num_T_states = size(runoff,1); % temperature states
 num_P_states = size(runoff,2); % precipitation states
 
 % Define reservoir capacities (can be an array of capacities)
-storage_vals = [85:5:95]; % set reservoir capacities (MCM)
+storage_vals = [85]; % set reservoir capacities (MCM)
 
 if ~isempty(getenv('SLURM_JOB_ID'))
      %poolobj = parpool('local', str2num(getenv('SLURM_NTASKS')));
@@ -82,7 +82,7 @@ for ss=1:length(storage_vals)
         
         % If true, then use climate adaptive inflow distributions in the SDP.
         % If false, use non-adaptive inflow distribution in the SDP.
-        runParam.adaptiveOps = true; % must match runParam.adaptiveOps above
+        runParam.adaptiveOps = false; % must match runParam.adaptiveOps above
         
         %% Set relevant sdp_climate.m main script parameters
         

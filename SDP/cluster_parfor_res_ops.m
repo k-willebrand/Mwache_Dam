@@ -58,7 +58,7 @@ runParam.optReservoir = true;
 runParam.calcShortage = true; 
 
 % Urban water demand scenarios (low = 150,000; high = 300,000)[m3/d](Fletcher 2019)
-runParam.domDemand = 150000; 
+runParam.domDemand = 186000; 
 
 % If false, do not include deslination plant (planning scenarios A and B
 % with current demand in table 1). If true, include desalination plant
@@ -97,10 +97,10 @@ climParam.checkBins = false;
 costParam = struct;
 
 % Value of shortage penalty for domestic use [$/m3]
-costParam.domShortage = 1;
+costParam.domShortage = 2;
 
 % Value of shortage penalty for ag use [$/m3]
-costParam.agShortage = 0;
+costParam.agShortage = 1;
 
 % Discount rate
 costParam.discountrate = 0.03;
