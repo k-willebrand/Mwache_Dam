@@ -6,10 +6,12 @@
 
 # SLURM ignores
 *.sh
+*.pdf
 
 # Git ignores the large data files
 Data/runoff_by_state_Mar16_knnboot_1t.mat
 Data/runoff_by_state_June16_knnboot_1t.mat
+Data/runoff_by_state_DetTemp_Mar16_knnboot_1t.mat
 Data/Mombasa_TandP.mat
 Data/Mwache_streamflow_monthly_1976to1990_JuneToMay_cumec.mat
 Data/BMA_results_RCP85_2020-11-14.mat
@@ -21,5 +23,10 @@ GA_optimize_flexible_capacity/post_process_opt_reservoir_results/*
 
 SDP_reservoir_ops/data/runoff_by_state_June16_knnboot_1t.mat
 SDP_reservoir_ops/data/post_process_sdp_reservoir_results/*
+
+BMA_code/BMA_results_RCP85_2020-11-14.mat
+BMA_code/BMA_results_RCP85_2020-11-11.mat
+BMA_code/BMA_results_RCP45_2020-11-11.mat
+BMA_code/BMA_results_RCP45_2020-11-10.mat
 
 Icon
