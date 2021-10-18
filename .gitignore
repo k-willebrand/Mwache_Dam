@@ -17,6 +17,7 @@ Data/Mwache_streamflow_monthly_1976to1990_JuneToMay_cumec.mat
 Data/BMA_results_RCP85_2020-11-14.mat
 Data/T_Temp_Precip_RCP85B.mat
 Data/Supplementary_Mwache_Streamflow_Jan2Dec_19771989.xlsx
+runoff_by_state__05_Aug_2021_21_39_24.mat
 
 GA_optimize_flexible_capacity/post_process_nonopt_reservoir_results/*
 GA_optimize_flexible_capacity/post_process_opt_reservoir_results/*
@@ -32,5 +33,16 @@ BMA_code/BMA_results_RCP45_2020-11-10.mat
 Plots/Bayesian plot utilities/*
 Plots/plotting utilities/*
 Plots/JSPlots/*
+
+Synthetic_TransMatrices/TMs_shift50_std3
+Synthetic_TransMatrices/TMs_shift25_std4
+
+SDP/runoff_by_state_05Aug2021.mat
+SDP/runoff_by_state_05Aug2021_ExpSS.mat
+SDP/mean2TPtimeseriesMJL_2_test.m
+
+Multiflex_expansion_SDP/SSD/*
+
+CLIRUN/SSD/*
 
 Icon
