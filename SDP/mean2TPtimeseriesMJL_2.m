@@ -1,4 +1,7 @@
-function [T_ts, P_ts] = mean2TPtimeseriesMJL_2(timestep, steplen, numsamp)
+function [T_ts, P_ts, model_rand, year_rand_start] = mean2TPtimeseriesMJL_3(timestep, steplen, numsamp)
+% updated October 2021 by JBS to take add in a detrending step and then use
+% 100 years of data (1990-2090) and produce 21 samples (one for each GCM), 
+% each with 100 years of data
 % updated March 13 by MJL. Using k-NN boostrapping method by Rajagopalan et al., (1999)
 % Create timeseries of temperature and precipitation anomalies for a certain meam T
 % and P states. Anomalies here include the seasonal cycle.  To retrieve T
@@ -18,29 +21,35 @@ function [T_ts, P_ts] = mean2TPtimeseriesMJL_2(timestep, steplen, numsamp)
 
 % Create index for appropriate dates in Tij and Pij
 startdate = (1990-1900)*12 + 1; % First period starts in 1990
-daterange = (timestep-1)*steplen*12 + startdate: (timestep)*steplen*12 + startdate - 1; % Second period starts in 2010
-
+daterange = (timestep-1)*(steplen)*12 + startdate: (timestep)*(steplen)*12 + startdate - 1;
 %% Load Pij and Tij
 
 load('Mombasa_TandP.mat', 'Tij', 'Pij')
+Tij = double(Tij);
+Pij = double(Pij);
+
+% Fit and remove trends for each GCM
+T_detrend = fitDetrend(Tij, daterange);
+P_detrend = fitDetrend(Pij, daterange);
 
 % Create standardized anomalies relative to decadal average across all GCMs for the current daterange
-Tmean_gcm = mean(Tij(daterange,:),1);
-Pmean_gcm = mean(Pij(daterange,:),1);
-T_anoms = Tij(daterange,:) - repmat(Tmean_gcm, length(daterange),1);
-P_anoms = Pij(daterange,:) - repmat(Pmean_gcm, length(daterange),1);
+Tmean_gcm = mean(T_detrend,1);
+Pmean_gcm = mean(P_detrend,1);
+T_anoms = T_detrend - repmat(Tmean_gcm, length(daterange),1);
+P_anoms = P_detrend - repmat(Pmean_gcm, length(daterange),1);
 
 % standardize the monthly anomalies for each gcm
 for month = 1:12
-    monthrange = month:12:240;
+    monthrange = month:12:steplen*12; %240
     Tmean_month(monthrange,:) = repmat(mean(T_anoms(monthrange,:),1),steplen,1);
-    Pmean_month(monthrange,:) = repmat(mean(P_anoms(monthrange,:),1),steplen,1);
     Tstd_month(monthrange,:) = repmat(std(T_anoms(monthrange,:),1),steplen,1);
+    Pmean_month(monthrange,:) = repmat(mean(P_anoms(monthrange,:),1),steplen,1);
     Pstd_month(monthrange,:) = repmat(std(P_anoms(monthrange,:),1),steplen,1);
-end   
+end    
+
 T_norm = (T_anoms - Tmean_month)./Tstd_month; % 'deseasonalized' values of T
 P_norm = (P_anoms - Pmean_month)./Pstd_month; % 'deseasonalized' values of P
-
+%%
 %indices of months in range of 
 %January
 monthopts(1,:) = repmat([12,1,2],1,steplen)+reshape(repmat([0:12:(steplen-1)*12],3,1),1,steplen*3);
@@ -53,13 +62,13 @@ monthopts(11,:) = repmat([10,11,12],1,steplen)+reshape(repmat([0:12:(steplen-1)*
 
 monthopts(12,:) = repmat([11,12,1],1,steplen)+reshape(repmat([0:12:(steplen-1)*12],3,1),1,steplen*3);
 
-% Sample a GCM and sample steplen*12 months of data
-% Do this numsamp times
-rng('shuffle')
-model_rand = randi(21, numsamp,1);
+%%
+% Sample each GCM once
+model_rand = 1:numsamp; %randi(21, numsamp,1);
 
 %Choose starting year
 year_rand = randi(steplen, numsamp, 1);
+year_rand_start = year_rand;
 time_ind_start = (year_rand - 1)*12 + 1;
 
 %Tmean = st;
@@ -74,6 +83,7 @@ k = floor(sqrt(steplen*3));
 % Defining the discrete probabilities (not sure if I understood this part
 % in the paper)
 time_indx = time_ind_start;
+%%
 for year = 1:steplen
     for m = 1:12
         t = 12*(year-1)+m;
@@ -102,8 +112,8 @@ for year = 1:steplen
         % if it gets to the end of our time span, resample a year and set 
         % the time indx to the month of for the following iteration
         tmp =  find(time_indx == steplen*12+1);
-        if isempty(tmp)
-        else
+        if isempty(tmp) % if not last time period, loop
+        else % what to do in the last time period
             rng('shuffle')
             year_rand = randi(steplen, 1,length(tmp));
             time_indx(tmp) = (year_rand - 1)*12 + mod(m,12)+1;   
