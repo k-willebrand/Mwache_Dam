@@ -7,7 +7,6 @@ function [mr, MR] = min_max_relG3(s, moy, s_max, sys_param)
 
 HH = sys_param.integration_substep;
 delta = sys_param.simulation.delta/HH; % Y
-evap = sys_param.simulation.ev ; % evap in units MCM/Y
 
 % MIN RELEASE RATE
 

@@ -1,4 +1,4 @@
-function  [yield_ddp,release_ddp, K_ddp]  = opt_ddp(net_inflow, eff_storage, dmd_dom, dmd_ag, costParam)
+function  [yield_ddp,release_ddp, K_ddp, unmet_dom_ddp, unmet_ag_ddp]  = opt_ddp(net_inflow, eff_storage, dmd_dom, dmd_ag, costParam)
 % DESCRIPTION:
 %   Uses DDP to find the optimal release policy if runParam.optReservoir == true
 %   that minimizes the shortage costs, accounting for the cost of agriculture
@@ -22,13 +22,17 @@ function  [yield_ddp,release_ddp, K_ddp]  = opt_ddp(net_inflow, eff_storage, dmd
 
 %% == SETUP ==
 n = length(net_inflow); % number of decision periods (months)
-K_ddp = zeros(1,n+1); % MCM
+K_ddp = zeros(1,n+1); % effective reservoir storage (MCM)
 yield_ddp = zeros(1,n); % MCM/Y
 release_ddp = zeros(1,n); % MCM/Y
-delta = 1/12; % monthly time step (Y)
+unmet_ddp = zeros(1,n); % m^3
+unmet_ag_ddp = zeros(1,n); % m^3
+unmet_dom_ddp = zeros(1,n); % m^3
+delta = 1/12; % monthly time step (in years)
 
 %K0 = eff_storage;
-K0 = 30; % MCM assume constant initial reservoir storage
+K0 = 30; % assume constant initial reservoir storage (MCM)
+env_flow = 0; % MCM/Y
 demand = dmd_dom + dmd_ag; % MCM/Y
 
 %nK = 150; % assume 150 discrete effective storage states 
@@ -40,53 +44,57 @@ discr_q = net_inflow; % consider n discrete net inflow disturbances(equals net_i
 costs_table = cell(nK,n); % create a cell array structure to store shortage costs
 poss_release_table = cell(nK,n); % create a cell array structure to store possible releases
 
-H = zeros(nK,n+1); % create the Bellman for cumulative shortage costs (H(n+1) = 0 for initial calculation)
+H = zeros(nK,n+1); % create the Bellman matrix for cumulative shortage costs (H(n+1) = 0 for initial calculation)
 
 %% == INITIATION FOR FINDING THE OPTIMAL RELEASE POLICY == 
 % Find all possible releases and correponding shortage costs for each
 % discrete storage state (nK states) at each time/decision period(n)
 
 for t = 1:n
-    q_now = discr_q(t); % net inflow disturbance for period t
-    targ_dmd_ag = dmd_ag(t); % target agricultural demand for period t
-    targ_release = demand(t); % target total release (demand) for period t
+    q_now = discr_q(t); % net inflow disturbance for period t (MCM/Y)
+    targ_dmd_ag = dmd_ag(t); % target agricultural demand for period t (MCM/Y)
+    targ_release = demand(t); % total target release/demand for period t (MCM/Y)
     
-    % -- FIND ALL POSSIBLE RELEASES AND CORRESONDING SHORTAGE COSTS THROUGH THE MULTI-MONTH NETWORK --
+    % -- FIND ALL POSSIBLE RELEASES AND CORRESONDING PENALTY FUNCTION VALUE THROUGH THE MULTI-MONTH NETWORK --
     for k = 1:nK %for each possible discrete effective storage state at time t
         
         K_state = discr_K(k); %define current possible effective storage state
         
         % define minimum and maximum possible releases
-        if K_state > eff_storage
-            min_release = (K_state-eff_storage)/delta;
+        if K_state + q_now <= env_flow*delta
+            min_release = max(K_state/delta,0);
+        elseif K_state > eff_storage
+            min_release = (K_state-eff_storage)/delta + env_flow; % MCM/Y
         else
-            min_release = 0; % limit the minimum release to 0 (or env_flow?)
+            min_release = env_flow; % limit the minimum release to 0 (or env_flow?)
         end
         %max_release = K_state+q_now; % limit max release to current storage + net inflow
         max_release = K_state/delta+q_now; % MCM/Y
         
-        % Calculate all possible release decisions from K_state relative
-        % to the defined discrete storage states (discr_K),correcting for 
+        % Calculate all possible release decisions from K_state 
+        % to the other defined discrete storage states (discr_K),correcting for 
         % releases outside the calculated max and min limits
         poss_release = (K_state - discr_K)/delta + q_now; % MCM/Y
-        poss_release(poss_release<min_release)= []; % release < minimum release not possible 
+        poss_release(poss_release<min_release)= []; % release < minimum release not possible (ex. negative release)
         poss_release(poss_release>max_release)= max_release;
         % STORE POSSIBLE RELEASES FOR STATE (k) AND PERIOD (t)
         poss_release_table{k,t} = poss_release; 
         
         % Calculate the single-period shortage cost from the possible
         % release decisions. Only penalize release decisions 
-        % when release < target release
+        % when release < target release (i.e., penalize when unmet demands
+        % > 0)
         
         poss_costs = zeros(1,length(poss_release));
         for i = 1:length(poss_release)
             if poss_release(i)>=targ_release
-                poss_costs(1,i) = 0; 
+                poss_costs(1,i) = 0; % demands met, no cost incurred
             else % insufficient release, domestic demand is met first
-                poss_unmet = max((targ_release - poss_release)*delta*1E6, 0); % CM
-                poss_unmet_ag = min(poss_unmet, targ_dmd_ag*delta*1E6); % CM
-                poss_unmet_dom = poss_unmet - poss_unmet_ag; % CM
-                poss_costs(1,i) = costParam.domShortage*(poss_unmet_dom(i))^2 +costParam.agShortage*(poss_unmet_ag(i))^2;
+                poss_unmet = max((targ_release - poss_release)*delta*1E6, 0); % m^3
+                poss_unmet_ag = min(poss_unmet, targ_dmd_ag*delta*1E6); % m^3
+                poss_unmet_dom = poss_unmet - poss_unmet_ag; % m^3
+                %poss_costs(1,i) = costParam.domShortage*(poss_unmet_dom(i))^2 +costParam.agShortage*(poss_unmet_ag(i))^2; 
+                poss_costs(1,i) = (2*poss_unmet_dom(i))^2 +(poss_unmet_ag(i))^2; % Objective function (J)
             end
         end
         % STORE POSSIBLE SHORTAGE COSTS FOR STATE (k) AND PERIOD (t)
@@ -109,9 +117,9 @@ for t = n:-1:1 % for each period (backwards recursion)
         % find index that minimizes the cost function. If there exists 
         % multiple minimum costs, select the smaller release decision
         [idx_opt,~] = find(costs_table{k,t}(:)+H(costs_exist,t+1) == min(costs_table{k,t}(:)+H(costs_exist,t+1)));
-        [idx_opt,~] = max(idx_opt); % if multiple smaller releases, release the one that yields the greater storage
+        [idx_opt,~] = max(idx_opt); % if multiple smaller releases, release the one that yields the greater storage (hedging)
        
-        % STORE MINIMUM SHORTAGE COST FOR STATE (k) AND PERIOD (t)
+        % STORE MINIMUM OBJECTIVE COST FOR STATE (k) AND PERIOD (t)
         costs_opt = costs_table{k,t}(1,idx_opt); 
         
         % Update the cumulative cost function (H) given optimal release decision
@@ -136,8 +144,13 @@ K_ddp(1)=K0; % assume that the initial effective storage is full
 for t = 1:n
     %Find optimal release decision from optimal policy for storage and time
     [~,idx_r] = find(discr_K == K_ddp(t));
-    release_ddp(t) = release_opt(idx_r,t);
-
+    release_ddp(t) = release_opt(idx_r,t); % optimal release
+    
+    % calculate the unmet demands
+    unmet_ddp(t) = max((demand(t) - release_ddp(t))*delta*1E6, 0); % CM
+    unmet_ag_ddp(t) = min(unmet_ddp(t), dmd_ag(t)*delta*1E6); % CM
+    unmet_dom_ddp(t) = unmet_ddp(t) - unmet_ag_ddp(t); % CM
+    
     yield_ddp(t) = min(demand(t),release_ddp(t)); %for calculation of yield, overflow is not be considered
     
     %Calculate the next effective storage based on optimal release

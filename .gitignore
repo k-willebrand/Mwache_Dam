@@ -8,8 +8,11 @@
 *.sh
 
 # Git ignores the large data files
+*.asv
 Data/runoff_by_state_Mar16_knnboot_1t.mat
+Data/runoff_by_state_06Oct2021.mat
 Data/runoff_by_state_June16_knnboot_1t.mat
+Data/Oct17post_process_sdp_reservoir_results/*
 Data/Mombasa_TandP.mat
 Data/Mwache_streamflow_monthly_1976to1990_JuneToMay_cumec.mat
 Data/BMA_results_RCP85_2020-11-14.mat
@@ -21,5 +24,8 @@ GA_optimize_flexible_capacity/post_process_opt_reservoir_results/*
 
 SDP_reservoir_ops/data/runoff_by_state_June16_knnboot_1t.mat
 SDP_reservoir_ops/data/post_process_sdp_reservoir_results/*
+SDP_reservoir_ops/data/runoff_by_state_06Oct2021.mat
+SDP_reservoir_ops/tests/*
+SDP_reservoir_ops/data/*
 
 Icon

@@ -1,4 +1,7 @@
 %% SDP RESERVOIR OPERATIONS - CALCULATE SHORTAGE COSTS
+% THIS IS THE MAIN SCRIPT UTILIZED TO RUN THE ADAPTIVE AND NON-ADAPTIVE
+% RESERVOIR OPERATIONS ON THE CLUSTER (Oct. 20, 2021)
+
 % This version of the script is parallized and can be run on the HPC cluster.
 
 % SDP implemenation to design the optimal operating policy for different

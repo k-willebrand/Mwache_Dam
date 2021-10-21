@@ -24,9 +24,12 @@ R = min( VV , max( vv , uu ) ); % possible releases constrained by min and max r
 %==========================================================================
 % Calculate the state transition; TO BE ADAPTAED ACCORDING TO
 % YOUR OWN CASE STUDY
-evap = sys_param.simulation.ev  ; % MCM/Y
+evap = interp1(discr_s, sys_param.simulation.ev(:,moy),s_curr,'pchip',max(sys_param.simulation.ev(:,moy))); % evap in MCM/Y: lookup expected evap based on incremental storage
+%evap = interp1(discr_s, sys_param.simulation.ev(:,moy),s_curr,'linear','extrap');
+
 qq = repmat( discr_q, 1, n_u ); % MCM/Y
-s_eff = max(s_curr + delta*qq - delta*evap(moy),0); % effective storage
+s_eff = max(s_curr + delta*qq - delta*evap,0); % effective storage
+%s_eff = max(s_curr + delta*qq - delta*evap(moy),0); % effective storage
 s_next = s_eff - delta * R; % MCM
 
 
@@ -39,7 +42,8 @@ dmd_dom = cmpd2mcmpy(runParam.domDemand); % MCM/Y
 if runParam.desalOn
     dmd_dom = cmpd2mcmpy(300000); % high domestic demand scenario for desal
 end
-dmd_ag = 12*[2.5 1.5 0.8 2.0 1.9 2.9 3.6 0.6 0.5 0.3 0.2 3.1]; % MCM/Y
+dmd_ag = 12*[2.5 1.5 0.8 2.0 1.9 2.9 3.6 0.6 0.5 0.3 0.2 3.1]; % MCM/Y (Fletcher)
+%dmd_ag = [32.65 35.40 30.31 10.47 3.44 9.09 13.78 19.70 23.42 21.22 21.22 24.11]; % MCM/Y (MWI Average rescaled)
 demand = dmd_dom + dmd_ag; % MCM/Y
 
 % Calclate unmet demands from releases and this period's shortage cost (G)
@@ -47,7 +51,10 @@ demand = dmd_dom + dmd_ag; % MCM/Y
 unmet = max((demand(moy) - R)*delta*1E6, 0); % CM
 unmet_ag = min(unmet, dmd_ag(moy)*delta*1E6); % CM
 unmet_dom = unmet - unmet_ag; % CM
-G =  (unmet_ag.^2 * costParam.agShortage + unmet_dom.^2 * costParam.domShortage); % CUBIC METERS ^ 2 forumulation
+%G =  (unmet_ag.^2 * costParam.agShortage + unmet_dom.^2 * costParam.domShortage); % CUBIC METERS ^ 2 forumulation
+%G =  (unmet_ag).^2 + (2*unmet_dom).^2; % CUBIC METERS ^ 2 forumulation
+G =  (unmet_ag).^2 + 2.3.*(unmet_dom).^2; % CUBIC METERS ^ 2 forumulation
+%G =  (unmet_ag + 2*unmet_dom).^2;
 
 %-- Compute cost-to-go given by Bellman function --
 H_ = interp1( discr_s , H_ , s_next(:), 'linear', 'extrap' ) ;

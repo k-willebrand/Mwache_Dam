@@ -50,9 +50,11 @@ for t=1:12
     %disp(t)
 for i = 1:length(discr_s)
     for j = 1:length(discr_q)
-        [~, r1] = massBalance( discr_s(i), 0, discr_q(j), t ,discr_s(end),sys_param);
+        %[~, r1] = massBalance( discr_s(i), 0, discr_q(j), t ,discr_s(end),sys_param);
+        [~, r1,~] = massBalance_Evap( discr_s(i), 0, discr_q(j), t ,discr_s,sys_param);
         vv(i,j,t) = r1; 
-        [~, r2] = massBalance( discr_s(i), discr_u(end), discr_q(j), t, discr_s(end),sys_param);
+        %[~, r2] = massBalance( discr_s(i), discr_u(end), discr_q(j), t, discr_s(end),sys_param);
+        [~, r2,~] = massBalance_Evap( discr_s(i), discr_u(end), discr_q(j), t ,discr_s, sys_param);
         VV(i,j,t) = r2; 
     end
 end

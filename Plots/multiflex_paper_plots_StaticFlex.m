@@ -45,6 +45,7 @@ subplot(1,2,1)
 plot(threshP, s_T_abs, 'LineWidth', 1.5, 'Color', 'k')
 %xlim([70, 83]) % previously: xlim([70, 83])
 ylim([s_T_abs(1), s_T_abs(end)])
+xlim([min(s_P_abs), max(s_P_abs)])
 xlabel('Mean P [mm/m]')
 ylabel('Mean T [degrees C]')
 text(73, 32.5, 'Static Dam');
@@ -57,6 +58,7 @@ hold on
 plot(threshPFlex, s_T_abs, 'LineWidth', 1.5)
 %xlim([66, 83]) % previously: xlim([70, 83])
 ylim([s_T_abs(1), s_T_abs(end)])
+xlim([min(s_P_abs), max(s_P_abs)])
 xlabel('Mean P [mm/m]')
 ylabel('Mean T [degrees C]')
 title('Flexible dam policy')
@@ -64,8 +66,13 @@ legend(decade{2:end}, 'location', 'northwest');
 legend('boxoff');
 text(66.5, 31.5, 'Expand Dam');
 text(78, 27, 'Do not \newlineexpand dam');
-sgtitle(['Dam Policies: Static = ', num2str(optParam.staticCap), ...
-    ', Flex Unexp = ', num2str(optParam.smallCap)], 'FontSize', 13);
+if runParam.optReservoir == 1
+    sgtitle({'SDP Adaptive Operations';strcat('Dam Policies: Static = ', num2str(optParam.staticCap), ...
+        ', Flex Unexp = ', num2str(optParam.smallCap))}, 'FontSize', 13);
+else
+    sgtitle({'SDP Non-Adaptive Operations';strcat('Dam Policies: Static = ', num2str(optParam.staticCap), ...
+        ', Flex Unexp = ', num2str(optParam.smallCap))}, 'FontSize', 13);
+end
 % Option 2 combined
 if false
 
@@ -225,6 +232,14 @@ set(gcf, 'PaperSize', [figure_width figure_height]);
 set(gcf, 'PaperPositionMode', 'manual');
 set(gcf, 'PaperPosition', [0 0 figure_width figure_height]);
 
+if runParam.optReservoir == 1
+    sgtitle([{'SDP Adaptive Operations';strcat('Dam Policies: Static = ', num2str(optParam.staticCap), ...
+        ', Flex Unexp = ', num2str(optParam.smallCap))}], 'FontSize', 13);
+else
+    sgtitle([{'SDP Non-Adaptive Operations';strcat('Dam Policies: Static = ', num2str(optParam.staticCap), ...
+        ', Flex Unexp = ', num2str(optParam.smallCap))}], 'FontSize', 13);
+end
+
 savename = '/Users/sarahfletcher/Documents/MATLAB/Mombasa_Climate/SDP plots/Combined/hist_cdf_combined2';
 % print(gcf, '-dpdf', strcat(savename, '.pdf'));
 
@@ -260,7 +275,7 @@ yl = ylabel('M$')
 yl.Position = yl.Position - [ .3 0 0];
 xl = xlabel('P in 2090 [mm/month]')
 xl.Position = xl.Position - [ 0 4 0];
-title('Cost and Regret for Infrastructure Alternatives by 2090 P')
+%title('Cost and Regret for Infrastructure Alternatives by 2090 P')
 l = legend('Flexible', 'Static')
 l.Position = l.Position + [-.1 -.1 0 0.1]
 legend('boxoff')
@@ -268,36 +283,16 @@ legend('boxoff')
 allaxes = findall(f, 'type', 'axes');
 set(allaxes,'FontSize', font_size)
 set(findall(allaxes,'type','text'),'FontSize', font_size)
+
+if runParam.optReservoir == 1
+    title([{'SDP Adaptive Operations';strcat('Dam Policies: Static = ', num2str(optParam.staticCap), ...
+        ', Flex Unexp = ', num2str(optParam.smallCap));'Cost and Regret for Infrastructure Alternatives by 2090 P'}], 'FontSize', 13);
+else
+    title([{'SDP Non-Adaptive Operations';strcat('Dam Policies: Static = ', num2str(optParam.staticCap), ...
+        ', Flex Unexp = ', num2str(optParam.smallCap));'Cost and Regret for Infrastructure Alternatives by 2090 P'}], 'FontSize', 13);
+end
+
 %printsetup(f, 7, 5, 12, 1, 300, 1, 1, 'regret' )
-
-%% Flexible Expansion Selected: New Figure 7 (Keani)
-% Distribution of expansion decisions to different capacities
-
-% frequency of each exp threshold decision
-actexp = action(:,2:end,end); % action{k}(:,2:end,end);
-exp = struct;
-for i=3:a_exp(end)
-    exp.(strcat('to',string(i))) = sum(actexp(:,1:end) == i,'all');
-end
-
-figure('Position', [354 267 506 430]);
-colormap(cmap)
-b1 = bar([1 1.5],[struct2array(exp); nan(1,length(struct2array(exp)))], 0.8, 'stacked');
-for i=1:length(struct2array(exp))
-    b1(i).FaceColor = cmap1(i,:);
-end
-
-% UPDATE LEGEND AND TITLES FOR THE SCENARIO RAN IN MULTIFLEX
-l = legend(capState(3:end), 'FontSize', 7);
-l.Position = l.Position + [-.25 -.5 0 0.1]
-
-t1 = title(['Expansion Decisions, ', 'Optimized Operations: ', num2str(storage(2:end)), ' MCM']);
-%t2 = sgtitle('Expansion Decisions')
-ylabel('Frequency')
-%ylim([0,1200])
-xlim([.5,1.5])
-set(gca,'XTick',[])
-xlabel('Expanded Flexible Dam Scenarios')
 
 %% Flexible Expansion Over Time
 s_C_bins = s_C - 0.01;
@@ -326,5 +321,11 @@ ylabel('Frequency');
 capState = {'Static', 'Flex, Unexpanded', 'Flex, Exp:+10', ...
     'Flex, Exp:+20', 'Flex, Exp:+30', 'Flex, Exp:+40', 'Flex, Exp:+50'};
 legend(capState, 'location', 'southeast');
-title(['Dam Action Decisions: Static = ', num2str(optParam.staticCap), ...
-    ', Flex Unexp = ', num2str(optParam.smallCap)], 'FontSize', 13);
+
+if runParam.optReservoir == 1
+    title([{'SDP Adaptive Operations';strcat('Dam Policies: Static = ', num2str(optParam.staticCap), ...
+        ', Flex Unexp = ', num2str(optParam.smallCap))}], 'FontSize', 13);
+else
+    title([{'SDP Non-Adaptive Operations';strcat('Dam Policies: Static = ', num2str(optParam.staticCap), ...
+        ', Flex Unexp = ', num2str(optParam.smallCap))}], 'FontSize', 13);
+end

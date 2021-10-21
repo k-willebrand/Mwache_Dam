@@ -44,12 +44,13 @@ desalsupply = zeros(numRuns,numYears*12);
 eff_storage = storage - dead_storage; %should have [60, 100]
 
 [E]  = evaporation_sdp(storage, T, P, climParam, runParam);
-net_inflow = inflow-env_flow-E; % MCM/Y
+%net_inflow = inflow-env_flow-E; % MCM/Y
+net_inflow = inflow-E; % MCM/Y
 %K0 = eff_storage; % assume reservoir storage is initially full
 K0 = 30; % MCM - assume constant initial storage
 
 for run=1:numRuns % for each possible temperature state
-    [yield_ddp,~, K_ddp] = opt_ddp(net_inflow(run,:), eff_storage, dmd_dom(run,:), dmd_ag(run,:), costParam);
+    [yield_ddp,~, K_ddp,unmet_dom_mdl, unmet_ag_mdl] = opt_ddp(net_inflow(run,:), eff_storage, dmd_dom(run,:), dmd_ag(run,:), costParam);
     release(run,:)=yield_ddp; % release does not consider overflow
     K(run,:)=K_ddp(1:length(yield_ddp)); % K is the optimized eff_storage time series
 end
@@ -58,9 +59,9 @@ end
 delta = 1/12; % time step in years
 yield_mdl = release;
 %unmet_mdl = max(demand - release - desalsupply, 0);
-unmet_mdl = max((demand - release - desalsupply)*delta*1E6, 0); % MCM
-unmet_ag_mdl = min(unmet_mdl, dmd_ag*delta*1E6); % MCM
-unmet_dom_mdl = unmet_mdl - unmet_ag_mdl; % MCM
+%unmet_mdl = max((demand - release - desalsupply)*delta*1E6, 0); % MCM
+%unmet_ag_mdl = min(unmet_mdl, dmd_ag*delta*1E6); % MCM
+%unmet_dom_mdl = unmet_mdl - unmet_ag_mdl; % MCM
 
 unmet_ag = mean(sum(unmet_ag_mdl,2));
 unmet_dom = mean(sum(unmet_dom_mdl,2));

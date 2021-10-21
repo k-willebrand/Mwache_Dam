@@ -125,7 +125,7 @@ runParam.runTPts = false;
 runParam.runoffPostProcess = false; 
 
 % If true, use optimal policies from SDP to do Monte Carlo simulation to esimate performance
-runParam.forwardSim = true;%x(6); 
+runParam.forwardSim = false;%x(6); 
 
 % If true, calculate Bellman transition matrix from BMA results. If false, load saved.
 runParam.calcTmat = false; 
@@ -139,7 +139,7 @@ runParam.optReservoir = true;
 runParam.calcShortage = false; 
 
 % Urban water demand scenarios (low = 150,000; high = 300,000)[m3/d](Fletcher 2019)
-runParam.domDemand = 150000; 
+runParam.domDemand = 186000; 
 
 % If false, do not include deslination plant (planning scenarios A and B
 % with current demand in table 1). If true, include desalination plant
@@ -150,7 +150,8 @@ runParam.desalOn = false;
 runParam.desalCapacity = [60 80];
 
 % If using pre-saved runoff time series, name of .mat file to load
-runParam.runoffLoadName = 'runoff_by_state_June16_knnboot_1t';
+%runParam.runoffLoadName = 'runoff_by_state_June16_knnboot_1t';
+runParam.runoffLoadName = 'runoff_by_state_06Oct2021';
 
 % If true, save results
 runParam.saveOn = false;
@@ -190,7 +191,7 @@ costParam.discountrate = 0.03; %x(8);
 % Initial upfront capital cost increase if flexible dam is chosen
 costParam.PercFlex = 0; % Jenny used 0.07
 
-% Expansion cost of flexible dam
+% Expansion cost of flexible dam (use expansion by 50 MCM added capacity for this parameter)
 costParam.PercFlexExp = 0.5; %x(7);
 
 %% SDP State and Action Definitions 
