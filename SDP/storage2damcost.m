@@ -28,7 +28,8 @@ dcost = costmodel.dam_cost(index);
 
 %add capital cost if using flex dam
 if flex_storage > 0
-    dcost = dcost * (1 + percFlex);
+    added_storage = flex_storage - storage;
+    dcost = dcost * (1 + percFlex*added_storage/50); % percent higher cost in reference to 50 MCM guideline
 end
 
 % Expansion costs if increase height
@@ -36,7 +37,7 @@ ecost = [];
 if flex_storage
     added_storage = flex_storage - storage;
     indexFlex = find(costmodel.storage == flex_storage);
-    ecost = added_storage * costmodel.unit_cost(indexFlex)*(1 + percFlexExp); % 50% higher unit cost when increasing height
+    ecost = added_storage * costmodel.unit_cost(indexFlex)*(1 + percFlexExp); % higher unit cost when increasing height
     dcost = dcost;
     
 end
