@@ -24,9 +24,9 @@ for adaptiveOps = 0:1
         for s = 1:length(storage_vals)
             storage = storage_vals(s);
             if adaptiveOps == 1
-                load(strcat('Oct172021sdp_adaptive_shortage_cost_domagCost231_s',string(storage),'.mat'));
+                load(strcat('Nov02post_process_sdp_reservoir_results/sdp_adaptive_shortage_cost_s',string(storage),'.mat'));
             else
-                load(strcat('Oct172021sdp_nonadaptive_shortage_cost_domagCost231_s',string(storage),'.mat'));
+                load(strcat('Nov02post_process_sdp_reservoir_results/sdp_nonadaptive_shortage_cost_s',string(storage),'.mat'));
             end
             subplot(2,5,adaptiveOps*5+t)
             cost = shortageCost(t,:);
@@ -508,9 +508,9 @@ for adaptiveOps = 0:1
         for s = 1:length(storage_vals)
             storage = storage_vals(s);
             if adaptiveOps == 1
-                load(strcat('Oct172021sdp_adaptive_shortage_cost_domagCost231_s',string(storage),'.mat'));
+                load(strcat('sdp_adaptive_shortage_cost_s',string(storage),'.mat'));
             else
-                load(strcat('Oct172021sdp_nonadaptive_shortage_cost_domagCost231_s',string(storage),'.mat'));
+                load(strcat('sdp_nonadaptive_shortage_cost_s',string(storage),'.mat'));
             end
             subplot(2,5,adaptiveOps*5+t)
             cost = cp.*shortageCost(t,:);
@@ -540,8 +540,8 @@ for adaptiveOps = 0:1
                 end
             end
         end
-        %xlim([49,119])
-        xlim([66,97])
+        xlim([49,119])
+        %xlim([66,97])
         xline(66,'Linestyle','--','color','black','DisplayName','')
         xline(97,'Linestyle','--','color','black','DisplayName','')
     end
@@ -670,4 +670,234 @@ end
     ylabel('Cost ($)')
     title('Shortage Cost vs. Unmet Demands')
     
+    
+%% Trial 5: consider range of data from only the initial climate state
+% Use range of monthly deficits from the initial climate state
+
+% RESULTS: when 95 percentile unmet demands are used, c' = 7.65E-5.
+% RESULTS: when 100 percentile unmet demands are used, c' = 1.58E-7
+
+% choose a preliminary value for c' (cp):
+cp = 1.58e-7; % [$/m^6]
+
+% define our cost parameter functions where x has units [$/m^6]
+x_ag = @(v) cp*v; % linear cost function for unit cost of agricultural shortages
+x_dom = @(v) 2.3*x_ag(v); % linear cost function for unit cost of domestic shortage
+
+% find the range of unmet domestic and agricultural demands from our model
+
+
+
+for adaptiveOps = 0:1
+
+    for s = 1:length(storage_vals)
+        storage = storage_vals(s);
+        if adaptiveOps == 1
+            load(strcat('Oct172021adaptive_domagCost231_SSTest_st1_sp29_s',string(storage),'_100821.mat'));
+        else
+            load(strcat('Oct172021adaptive_domagCost231_SSTest_st1_sp29_s',string(storage),'_100821.mat'));
+        end
+        if s == 1
+            unmet_ag_all = unmet_ag_ts(241:end,:)';
+            unmet_dom_all = unmet_dom_ts(241:end,:)';
+        else
+            unmet_ag_all = [unmet_ag_all; unmet_ag_ts(241:end,:)'];
+            unmet_dom_all = [unmet_dom_all; unmet_dom_ts(241:end,:)'];
+        end
+        
+    end
+end
+
+% v_ag = linspace(min(unmet_ag_all,[],'all'),max(unmet_ag_all,[],'all'));
+% v_dom = linspace(min(unmet_dom_all,[],'all'),max(unmet_dom_all,[],'all'));
+
+v_ag = linspace(min(unmet_ag_all,[],'all'),prctile(unmet_ag_all, 100,'all'));
+v_dom = linspace(min(unmet_dom_all,[],'all'),prctile(unmet_dom_all, 100,'all'));
+
+% calculate the mean value over the larger range of shortage deficits
+% in our model, we found that (v_ag) has a larger range of values
+mean_x_ag = mean(x_ag(v_ag));
+mean_x_dom = mean(x_dom(v_ag));
+
+% 
+figure()
+plot(v_ag, x_ag(v_ag),'DisplayName','$x_{ag}(v)$')
+hold on
+plot(v_ag, x_dom(v_ag),'DisplayName','$x_{dom}(v)$')
+hold on
+yline(mean_x_ag,'LineStyle','--','DisplayName',strcat('$\overline{x_{ag}(v)}$ = ', string(mean_x_ag)),'interpreter','latex','color','blue')
+hold on
+yline(mean_x_dom,'LineStyle','--','DisplayName',strcat('$\overline{x_{dom}(v)}$ = ', string(mean_x_dom)),'interpreter','latex','color','red')
+xlabel('Shortage Deficit (v) [m^3]')
+ylabel('Unit Cost of Shortage (x) [$/m^3]')
+legend('interpreter','latex')
+title({'Unit Cost of Shortage vs. Volume of Shortage';strcat("c' = $", string(cp)," /m^6")}...
+    ,'FontWeight','bold')
+
+% plot the resulting scaled shortage costs
+v_ag = unmet_ag_all;
+v_dom = unmet_dom_all;
+
+figure
+for adaptiveOps = 0:1
+    for t = 1:5
+        for s = 1:length(storage_vals)
+            storage = storage_vals(s);
+            if adaptiveOps == 1
+                load(strcat('sdp_adaptive_shortage_cost_s',string(storage),'.mat'));
+            else
+                load(strcat('sdp_nonadaptive_shortage_cost_s',string(storage),'.mat'));
+            end
+            subplot(2,5,adaptiveOps*5+t)
+            cost = cp.*shortageCost(t,:);
+            if adaptiveOps == 1
+                plot([49:119],cost,'DisplayName',strcat('Adaptive ', string(storage),'MCM'))
+                hold on
+            else
+                plot([49:119],cost,'DisplayName',strcat('Non-adaptive ', string(storage),'MCM'))
+                hold on
+            end
+            xlabel('Precipitation State [mm/mo]')
+            ylabel('Shortage Cost ($)')
+            if t == 3
+                if adaptiveOps == 1
+                    title({'Adaptive Operations';strcat('T State: ',string(s_T_abs(t)),'*C')})
+                else
+                    title({'Non-Adaptive Operations';strcat('T State: ',string(s_T_abs(t)),'*C')})
+                end
+            else
+                title(strcat('T State: ',string(s_T_abs(t)),'*C'))
+            end
+            if t == 1
+                if adaptiveOps == 1
+                    legend(strcat('Adaptive ', string(storage_vals),'MCM'),'AutoUpdate','off')
+                else
+                    legend(strcat('Non-Adaptive ', string(storage_vals),'MCM'),'AutoUpdate','off')
+                end
+            end
+        end
+        xlim([49,119])
+        %xlim([66,97])
+        xline(66,'Linestyle','--','color','black','DisplayName','')
+        xline(97,'Linestyle','--','color','black','DisplayName','')
+    end
+end
+
+sgtitle({strcat("Rescaled Shortage Costs for c' = $", string(cp)," /m^6 "); 
+    strcat('mean x_{ag} = $',string(mean_x_ag),' /m^3 & mean x_{dom} = $', string(mean_x_dom),' /m^3')}...
+    ,'FontWeight','bold')
+
+%% Trial 6: consider median unmemt demand from only the warmest, driest climate state
+% Use monthly deficits from the iniitial climate state
+
+% RESULTS: when median unmet demands are used,c' = 1.1e-6.
+
+% choose a preliminary value for c' (cp):
+cp = 7.5e-6; % [$/m^6]
+
+% define our cost parameter functions where x has units [$/m^6]
+x_ag = @(v) cp*v; % linear cost function for unit cost of agricultural shortages
+x_dom = @(v) 2.3*x_ag(v); % linear cost function for unit cost of domestic shortage
+
+% find the range of unmet domestic and agricultural demands from our model
+
+for adaptiveOps = 0:1
+
+    for s = 1:length(storage_vals)
+        storage = storage_vals(s);
+        if adaptiveOps == 1
+            load(strcat('Oct172021adaptive_domagCost231_SSTest_st5_sp18_s',string(storage),'_100821.mat'));
+        else
+            load(strcat('Oct172021adaptive_domagCost231_SSTest_st5_sp18_s',string(storage),'_100821.mat'));
+        end
+        if s == 1
+            unmet_ag_all = unmet_ag_ts(241:end,:)';
+            unmet_dom_all = unmet_dom_ts(241:end,:)';
+        else
+            unmet_ag_all = [unmet_ag_all; unmet_ag_ts(241:end,:)'];
+            unmet_dom_all = [unmet_dom_all; unmet_dom_ts(241:end,:)'];
+        end
+        
+    end
+end
+
+v_ag_med = prctile(unmet_ag_all, 50,'all');
+v_dom_med = prctile(unmet_dom_all, 50,'all');
+
+% calculate the mean value over the larger range of shortage deficits
+% in our model, we found that (v_ag) has a larger range of values
+x_ag_med = x_ag(v_ag_med);
+x_dom_med = x_dom(v_ag_med);
+
+v_ag = linspace(0,max(unmet_ag_all,[],'all'));
+v_dom = linspace(0,max(unmet_dom_all,[],'all'));
+
+% 
+figure()
+plot(v_ag, x_ag(v_ag),'DisplayName','$x_{ag}(v)$')
+hold on
+plot(v_ag, x_dom(v_ag),'DisplayName','$x_{dom}(v)$')
+hold on
+yline(x_ag_med,'LineStyle','--','DisplayName',strcat('$median x_{ag}(v) = ', string(x_ag_med), '$'),'interpreter','latex','color','blue')
+hold on
+yline(x_dom_med,'LineStyle','--','DisplayName',strcat('$median x_{dom}(v) = ', string(x_dom_med),'$'),'interpreter','latex','color','red')
+xlabel('Shortage Deficit (v) [m^3]')
+ylabel('Unit Cost of Shortage (x) [$/m^3]')
+legend('interpreter','latex')
+title({'Unit Cost of Shortage vs. Volume of Shortage';strcat("c' = $", string(cp)," /m^6")}...
+    ,'FontWeight','bold')
+
+% plot the resulting scaled shortage costs
+v_ag = unmet_ag_all;
+v_dom = unmet_dom_all;
+
+figure
+for adaptiveOps = 0:1
+    for t = 1:5
+        for s = 1:length(storage_vals)
+            storage = storage_vals(s);
+            if adaptiveOps == 1
+                load(strcat('sdp_adaptive_shortage_cost_s',string(storage),'.mat'));
+            else
+                load(strcat('sdp_nonadaptive_shortage_cost_s',string(storage),'.mat'));
+            end
+            subplot(2,5,adaptiveOps*5+t)
+            cost = cp.*shortageCost(t,:);
+            if adaptiveOps == 1
+                plot([49:119],cost,'DisplayName',strcat('Adaptive ', string(storage),'MCM'))
+                hold on
+            else
+                plot([49:119],cost,'DisplayName',strcat('Non-adaptive ', string(storage),'MCM'))
+                hold on
+            end
+            xlabel('Precipitation State [mm/mo]')
+            ylabel('Shortage Cost ($)')
+            if t == 3
+                if adaptiveOps == 1
+                    title({'Adaptive Operations';strcat('T State: ',string(s_T_abs(t)),'*C')})
+                else
+                    title({'Non-Adaptive Operations';strcat('T State: ',string(s_T_abs(t)),'*C')})
+                end
+            else
+                title(strcat('T State: ',string(s_T_abs(t)),'*C'))
+            end
+            if t == 1
+                if adaptiveOps == 1
+                    legend(strcat('Adaptive ', string(storage_vals),'MCM'),'AutoUpdate','off')
+                else
+                    legend(strcat('Non-Adaptive ', string(storage_vals),'MCM'),'AutoUpdate','off')
+                end
+            end
+        end
+        %xlim([49,119])
+        xlim([66,97])
+        xline(66,'Linestyle','--','color','black','DisplayName','')
+        xline(97,'Linestyle','--','color','black','DisplayName','')
+    end
+end
+
+sgtitle({strcat("Rescaled Shortage Costs for c' = $", string(cp)," /m^6 "); 
+    strcat('median x_{ag} = $',string(x_ag_med),' /m^3 & median x_{dom} = $', string(x_dom_med),' /m^3')}...
+    ,'FontWeight','bold')
+
     

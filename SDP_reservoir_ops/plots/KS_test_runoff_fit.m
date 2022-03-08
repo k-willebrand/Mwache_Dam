@@ -164,7 +164,7 @@ T = sys_param.algorithm.T ;
 % distribution that is statistically significant (K-S test)
 
 % load runoff data
-load('runoff_by_state_06Oct2021.mat'); % Jenny's final updated de-trended data [49:1:119] mm/month
+load('runoff_by_state_02Nov2021.mat'); % Jenny's final updated de-trended data [49:1:119] mm/month
 
 % Keani works with 66 to 97 mm/month; Jenny considers entire precip. range
 s_T_abs = [26.25, 26.75, 27.25, 27.95, 28.8]; % deg. C
@@ -175,7 +175,7 @@ sys_param.algorithm.name = 'sdp';
 sys_param.algorithm.Hend = 0 ; % penalty set to 0
 sys_param.algorithm.T = 12;    % the period is equal 1 year
 climParam.numSampTS = 21; % number of simulations (21 GCMs)
-runParam.steplen = 100; % number of years
+runParam.steplen = 200; %100; % number of years
 sys_param.algorithm.numSampTS = climParam.numSampTS;
 sys_param.algorithm.gamma = 1; % set future discount factor
 tol = -1;    % accuracy level for termination

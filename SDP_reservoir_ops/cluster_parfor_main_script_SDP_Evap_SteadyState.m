@@ -34,7 +34,7 @@ else
 end
 
 addpath(genpath(projpath))
-mkdir('Oct17sdp_reservoir_ops_SteadyState')
+mkdir('Nov02sdp_reservoir_ops_SteadyState')
 
 addpath('data')
 addpath('SDP_code')
@@ -43,7 +43,7 @@ addpath('SDP_reservoir_ops')
 %% Set run parameters for shortage cost calculations
 
 % Define reservoir capacities (can be an array of capacities)
-storage_vals = [50 150]; % set reservoir capacities (MCM)
+storage_vals = [30]; % set reservoir capacities (MCM)
 
 date = '100821'; % set date for save name
 
@@ -52,7 +52,7 @@ s_T_abs = [26.25, 26.75, 27.25, 27.95, 28.8]; % deg. C
 s_P_abs = 49:1:119; % expanded state space [mm/month]
 %s_P_abs = 66:1:97; % unexpanded state space [mm/month]
 
-load('runoff_by_state_06Oct2021.mat'); % Jenny's final updated de-trended data [49:1:119] mm/month
+load('runoff_by_state_02Nov2021.mat'); % Jenny's final updated de-trended data [49:1:119] mm/month
 
 % number of temperature and precipation states to calculate shortage costs
 num_T_states = size(runoff,1); % temperature states
@@ -99,7 +99,7 @@ for ss=1:length(storage_vals)
             runParam.N = 5; % Current SDP model requires N = 5
             
             % Number of years to generate in T, P, streamflow time series
-            runParam.steplen = 100;
+            runParam.steplen = 200; %100;
             
             % Urban water demand scenarios (low = 150,000; high = 300,000)[m3/d](Fletcher 2019)
             runParam.domDemand = 186000; % 2020 design demand
@@ -215,7 +215,7 @@ for ss=1:length(storage_vals)
             sys_param.simulation.ev = ee ; % MCM/Y
             
             % update steplen and numSampTS for 21 100-year simulations
-            runParam.steplen = 100; % 100 years
+            runParam.steplen = 200; %100; % 100 years
             climParam.numSampTS = 21; % simulations (21 GCMs)
             
             q_sim = sys_param.simulation.q;
@@ -248,9 +248,9 @@ for ss=1:length(storage_vals)
             
             if runParam.saveOn
                 if runParam.adaptiveOps
-                    filename = strcat('Oct17sdp_reservoir_ops_SteadyState/Oct172021adaptive_domagCost231_SSTest','_st',num2str(s_T),'_sp',num2str(s_P),'_s',string(storage),'_',date,'.mat');
+                    filename = strcat('Nov02sdp_reservoir_ops_SteadyState/Nov022021adaptive_domagCost231_SSTest','_st',num2str(s_T),'_sp',num2str(s_P),'_s',string(storage),'_',date,'.mat');
                 else
-                    filename = strcat('Oct17sdp_reservoir_ops_SteadyState/Oct172021nonadaptive_domagCost231_SSTest','_st',num2str(s_T),'_sp',num2str(s_P),'_s',string(storage),'_',date,'.mat');
+                    filename = strcat('Nov02sdp_reservoir_ops_SteadyState/Nov022021nonadaptive_domagCost231_SSTest','_st',num2str(s_T),'_sp',num2str(s_P),'_s',string(storage),'_',date,'.mat');
                 end
                 parsave(filename, shortageCost, objective_ts,  storage_ts, unmet_ag_ts, unmet_dom_ts);
             end

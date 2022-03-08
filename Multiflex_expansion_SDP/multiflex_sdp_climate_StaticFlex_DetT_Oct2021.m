@@ -150,7 +150,7 @@ runParam.desalOn = false;
 runParam.desalCapacity = [60 80];
 
 % If using pre-saved runoff time series, name of .mat file to load
-runParam.runoffLoadName = 'runoff_by_state_06Oct2021';
+runParam.runoffLoadName = 'runoff_by_state_02Nov2021';
 
 % If true, save results
 runParam.saveOn = false;
@@ -180,7 +180,7 @@ costParam.agShortage = 0.28; % Fletcher et al. (2019) utilized 0
 
 % Use the parameter c' to scale the quadratic shortage cost formulation to
 % reflect the average water unit cost reported by the FAO for Africa.
-costParam.cPrime = 4.85e-7;%4.85e-7; %V1: 1.6e-7; %1.85e-9; % [$/m^6];
+costParam.cPrime = 6e-6; %7.65e-5;%Recent:4.85e-7; %V1: 1.6e-7; %1.85e-9; % [$/m^6];
 
 % Discount rate
 costParam.discountrate = x(8); %0.03;
@@ -723,10 +723,18 @@ end
 % 2 runs: static, flex
 
 if runParam.forwardSim
-        
+
+    
 R = 10000; % Number of forward Monte Carlo simulations
 N = runParam.N; % Number of time periods
 S = 3; % Number of run options (static, flex, policy)
+
+% set constant random numbers for climate state transitions such that
+% forward simulations can be compared. Use default random generator type
+% 'twister' and random seed 0. See use of variable p in forward
+% simulations.
+rng(0,'twister') % set seed
+p_vals = rand(R,N);
 
 T_state = zeros(R,N);
 P_state = zeros(R,N);
@@ -742,6 +750,7 @@ indT0 = find(s_T_abs == climParam.T0_abs);
 indP0 = find(s_P_abs == climParam.P0_abs);
 P0samp = MUP(:,1,indP0);
 P0samp = exp(P0samp)* climParam.P0_abs;
+rng(2,'twister') % set seed
 indsamp = randi(1000,R,1);
 P0samp = P0samp(indsamp);
 T0samp = round2x(s_T_abs(1), s_T_abs);
@@ -868,7 +877,8 @@ for i = 1:R
             if t < N
                 T_current_1D = reshape(T_current,[1 numel(T_current)]);
                 T_current_1D_cumsum = cumsum(T_current_1D);
-                p = rand();
+                %p = rand();
+                p = p_vals(i,t); % so that forward simulations are consistent
                 index = find(p < T_current_1D_cumsum,1);
                 [ind_s1, ind_s2, ind_s3] = ind2sub(size(T_current),index);
                     % Test sample

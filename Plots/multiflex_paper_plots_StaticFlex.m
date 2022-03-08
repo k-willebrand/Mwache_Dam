@@ -6,17 +6,32 @@ end
 decade = {'2001-2020', '2021-2040', '2041-2060', '2061-2080', '2081-2100'};
 decadeline = {'2001-\newline2020', '2021-\newline2040', '2041-\newline2060', '2061-\newline2080', '2081-\newline2100'};
 
+if optParam.smallCap + optParam.flexIncr*optParam.numFlex > 150
+    optParam.numFlex = (150 - optParam.smallCap)/optParam.flexIncr;
+end
+
 
 %% Optimal policies plots: Fig 4
 % figure (1a): In N=1, build flexible or do not build flex
 
+% Initial Actions: 1 - build static;  2 - build flex
+% Expansion Actions:  0 - do nothing; 1 - build static;  2 - build flex; 3:end - expand to flex option X
 if true
 
 % Calculate initial threshold
 policy1 =  X(:,:,1,1);
 indexThresh = zeros(M_T_abs,1);
 for i = 1:M_T_abs
-    indexThresh(i) = find(policy1(i,:) == 2, 1);
+    if policy1(1,1) == 1 % threshold indexing issues when flex and static are same capacity
+        indexThresh(i) = find(policy1(i,:) == 2, 1); % find first static index since flex is prioritized for drier states
+    elseif policy1(1,1) == 2
+        indexThresh(i) = find(policy1(i,:) == 1, 1); % find first flex index since static is prioritized for drier states
+    end
+    %     if bestAct(2) == bestAct(3) % threshold indexing issues when flex and static are same capacity
+%         indexThresh(i) = find(policy1(i,:) == 1, 1); % find first static index since flex is prioritized for drier states
+%     else
+%         indexThresh(i) = find(policy1(i,:) == 2, 1); % find first flex index since static is prioritized for drier states
+%     end
 end
 threshP = s_P_abs(indexThresh);
 
@@ -48,8 +63,35 @@ ylim([s_T_abs(1), s_T_abs(end)])
 xlim([min(s_P_abs), max(s_P_abs)])
 xlabel('Mean P [mm/m]')
 ylabel('Mean T [degrees C]')
-text(73, 32.5, 'Static Dam');
-text(79, 27, 'Flexible Dam');
+if policy1(1,1) == 1
+    if all(threshP == 66,'all')
+       text(78, 27.5, 'Static \newlineDam');  % find first static index since flex is prioritized for drier states
+    else
+        text(70, 28, 'Static \newlineDam');  % find first static index since flex is prioritized for drier states
+        text(85, 27, 'Flexible \newlineDam');
+    end
+elseif policy1(1,1) == 2
+    if all(threshP == 66,'all')
+        text(78, 27.5, 'Flexible \newlineDam');  % find first static index since flex is prioritized for drier states
+    else
+        text(70, 28, 'Flexible \newlineDam');
+        text(85, 27, 'Static \newlineDam');
+    end
+% if bestAct(2) == bestAct(3) 
+%     if all(threshP == 66,'all')
+%        text(78, 27.5, 'Flexible \newlineDam');  % find first static index since flex is prioritized for drier states
+%     else
+%         text(70, 28, 'Flexible \newlineDam');  % find first static index since flex is prioritized for drier states
+%         text(85, 27, 'Static \newlineDam');
+%     end
+% else
+%     if all(threshP == 66,'all')
+%         text(78, 27.5, 'Flexible \newlineDam');  % find first static index since flex is prioritized for drier states
+%     else
+%         text(70, 28, 'Static \newlineDam');
+%         text(85, 27, 'Flexible \newlineDam');
+%     end
+end
 title('Initial policy')
 
 
@@ -62,16 +104,18 @@ xlim([min(s_P_abs), max(s_P_abs)])
 xlabel('Mean P [mm/m]')
 ylabel('Mean T [degrees C]')
 title('Flexible dam policy')
-legend(decade{2:end}, 'location', 'northwest');
+legend(decade{2:end}, 'location', 'northeast');
 legend('boxoff');
-text(66.5, 31.5, 'Expand Dam');
-text(78, 27, 'Do not \newlineexpand dam');
+text(66.5, 28, 'Expand \newlinedam');
+text(83, 27, 'Do not \newlineexpand dam');
 if runParam.optReservoir == 1
-    sgtitle({'SDP Adaptive Operations';strcat('Dam Policies: Static = ', num2str(optParam.staticCap), ...
-        ', Flex Unexp = ', num2str(optParam.smallCap))}, 'FontSize', 13);
+    sgtitle({'SDP Adaptive Operations';strcat('Dam Policies: Static = ',...
+        num2str(optParam.staticCap), " MCM , Flex = ", num2str(optParam.smallCap)," + ",...
+        num2str(optParam.flexIncr*optParam.numFlex)," MCM")}, 'FontSize', 13, 'FontWeight','bold');
 else
-    sgtitle({'SDP Non-Adaptive Operations';strcat('Dam Policies: Static = ', num2str(optParam.staticCap), ...
-        ', Flex Unexp = ', num2str(optParam.smallCap))}, 'FontSize', 13);
+    sgtitle({'SDP Non-Adaptive Operations';strcat('Dam Policies: Static = ',... 
+        num2str(optParam.staticCap)," MCM , Flex = ", num2str(optParam.smallCap)," + ",...
+        num2str(optParam.flexIncr*optParam.numFlex)," MCM")}, 'FontSize', 13,'FontWeight','bold');
 end
 % Option 2 combined
 if false
@@ -233,11 +277,13 @@ set(gcf, 'PaperPositionMode', 'manual');
 set(gcf, 'PaperPosition', [0 0 figure_width figure_height]);
 
 if runParam.optReservoir == 1
-    sgtitle([{'SDP Adaptive Operations';strcat('Dam Policies: Static = ', num2str(optParam.staticCap), ...
-        ', Flex Unexp = ', num2str(optParam.smallCap))}], 'FontSize', 13);
+    sgtitle({'SDP Adaptive Operations';strcat('Dam Policies: Static = ',...
+        num2str(optParam.staticCap), " MCM , Flex = ", num2str(optParam.smallCap)," + ",...
+        num2str(optParam.flexIncr*optParam.numFlex)," MCM")}, 'FontSize', 13, 'FontWeight','bold');
 else
-    sgtitle([{'SDP Non-Adaptive Operations';strcat('Dam Policies: Static = ', num2str(optParam.staticCap), ...
-        ', Flex Unexp = ', num2str(optParam.smallCap))}], 'FontSize', 13);
+    sgtitle({'SDP Non-Adaptive Operations';strcat('Dam Policies: Static = ',... 
+        num2str(optParam.staticCap)," MCM , Flex = ", num2str(optParam.smallCap)," + ",...
+        num2str(optParam.flexIncr*optParam.numFlex)," MCM")}, 'FontSize', 13,'FontWeight','bold');
 end
 
 savename = '/Users/sarahfletcher/Documents/MATLAB/Mombasa_Climate/SDP plots/Combined/hist_cdf_combined2';
@@ -250,7 +296,7 @@ savename = '/Users/sarahfletcher/Documents/MATLAB/Mombasa_Climate/SDP plots/Comb
 bestOption = 0;
 
 P_regret = [68 78 88];
-totalCost = squeeze(sum(totalCostTime(:,:,1:2), 2));
+totalCost = squeeze(sum(totalCostTime(:,:,1:2), 2)); % 1 is flex, 2 is static
 meanCostPnow = zeros(length(P_regret),2);
 for i = 1:length(P_regret)
     % Find simulations with this level of precip
@@ -267,17 +313,18 @@ f = figure;
 font_size = 12;
 bar([meanCostPnow; regret]/1E6)
 hold on
-line([3.5 3.5], [0 200],'Color', 'k')
+line([3.5 3.5], [0 ceil(max(meanCostPnow/1E6,[],'all'))+50],'Color', 'k')
 xlim([.5 6.5])
-ylim([0 200]);
+ylim([0 ceil(max(meanCostPnow/1E6,[],'all'))+50]);
 xticklabels({'68', '78', '88', '68', '78', '88'})
 yl = ylabel('M$')
 yl.Position = yl.Position - [ .3 0 0];
 xl = xlabel('P in 2090 [mm/month]')
 xl.Position = xl.Position - [ 0 4 0];
-%title('Cost and Regret for Infrastructure Alternatives by 2090 P')
+title('Cost and Regret for Infrastructure Alternatives by 2090 P')
 l = legend('Flexible', 'Static')
-l.Position = l.Position + [-.1 -.1 0 0.1]
+%l.Position = l.Position + [-.1 -.1 0 0.1]
+l.Position = l.Position + [-0.15 -0.15 0 0.05]
 legend('boxoff')
 % FONT
 allaxes = findall(f, 'type', 'axes');
@@ -286,10 +333,10 @@ set(findall(allaxes,'type','text'),'FontSize', font_size)
 
 if runParam.optReservoir == 1
     title([{'SDP Adaptive Operations';strcat('Dam Policies: Static = ', num2str(optParam.staticCap), ...
-        ', Flex Unexp = ', num2str(optParam.smallCap));'Cost and Regret for Infrastructure Alternatives by 2090 P'}], 'FontSize', 13);
+        " MCM, Flex = ", num2str(optParam.smallCap), " + ", num2str(optParam.numFlex*optParam.flexIncr)," MCM");'Cost and Regret for Infrastructure Alternatives by 2090 P'}], 'FontSize', 13);
 else
     title([{'SDP Non-Adaptive Operations';strcat('Dam Policies: Static = ', num2str(optParam.staticCap), ...
-        ', Flex Unexp = ', num2str(optParam.smallCap));'Cost and Regret for Infrastructure Alternatives by 2090 P'}], 'FontSize', 13);
+        " MCM, Flex = ", num2str(optParam.smallCap), " + ", num2str(optParam.numFlex*optParam.flexIncr)," MCM");'Cost and Regret for Infrastructure Alternatives by 2090 P'}], 'FontSize', 13);
 end
 
 %printsetup(f, 7, 5, 12, 1, 300, 1, 1, 'regret' )
@@ -297,6 +344,8 @@ end
 %% Flexible Expansion Over Time
 s_C_bins = s_C - 0.01;
 s_C_bins(end+1) = s_C(end)+0.01;
+
+clear actCounts actCounts_test
 
 for k=1:5
     actCounts(k,:) = histcounts(action(:,k,3), s_C_bins);
@@ -320,12 +369,13 @@ xlabel('Time Period');
 ylabel('Frequency');
 capState = {'Static', 'Flex, Unexpanded', 'Flex, Exp:+10', ...
     'Flex, Exp:+20', 'Flex, Exp:+30', 'Flex, Exp:+40', 'Flex, Exp:+50'};
-legend(capState, 'location', 'southeast');
+l = legend(capState, 'location', 'southeast');
+l.Position = l.Position + [-0.25 0 0 0]
 
 if runParam.optReservoir == 1
     title([{'SDP Adaptive Operations';strcat('Dam Policies: Static = ', num2str(optParam.staticCap), ...
-        ', Flex Unexp = ', num2str(optParam.smallCap))}], 'FontSize', 13);
+        " MCM, Flex = ", num2str(optParam.smallCap), " + ", num2str(optParam.numFlex*optParam.flexIncr)," MCM");'Cost and Regret for Infrastructure Alternatives by 2090 P'}], 'FontSize', 13);
 else
     title([{'SDP Non-Adaptive Operations';strcat('Dam Policies: Static = ', num2str(optParam.staticCap), ...
-        ', Flex Unexp = ', num2str(optParam.smallCap))}], 'FontSize', 13);
+        " MCM, Flex = ", num2str(optParam.smallCap), " + ", num2str(optParam.numFlex*optParam.flexIncr)," MCM");'Cost and Regret for Infrastructure Alternatives by 2090 P'}], 'FontSize', 13);
 end

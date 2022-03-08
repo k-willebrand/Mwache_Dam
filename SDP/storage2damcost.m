@@ -14,7 +14,9 @@ end
 % Infrastructure: The Power and Water Sectors. (R. Cervigni, R. Liden, J. 
 % E. Neumann, & K. M. Strzepek, Eds.). Washington, DC: The World Bank. 
 % https://doi.org/10.1017/CBO9781107415324.004
-load('dam_cost_model')
+
+%load('dam_cost_model')
+load('new_dam_cost_model')
 
 
 % Make sure input storage volume is in dam cost lookup table
@@ -37,6 +39,7 @@ ecost = [];
 if flex_storage
     added_storage = flex_storage - storage;
     indexFlex = find(costmodel.storage == flex_storage);
+    %indexFlex = find(costmodel.storage == storage);
     ecost = added_storage * costmodel.unit_cost(indexFlex)*(1 + percFlexExp); % higher unit cost when increasing height
     dcost = dcost;
     
