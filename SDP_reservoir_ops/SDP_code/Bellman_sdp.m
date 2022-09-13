@@ -52,9 +52,7 @@ unmet = max((demand(moy) - R)*delta*1E6, 0); % CM
 unmet_ag = min(unmet, dmd_ag(moy)*delta*1E6); % CM
 unmet_dom = unmet - unmet_ag; % CM
 %G =  (unmet_ag.^2 * costParam.agShortage + unmet_dom.^2 * costParam.domShortage); % CUBIC METERS ^ 2 forumulation
-%G =  (unmet_ag).^2 + (2*unmet_dom).^2; % CUBIC METERS ^ 2 forumulation
 G =  (unmet_ag).^2 + 2.3.*(unmet_dom).^2; % CUBIC METERS ^ 2 forumulation
-%G =  (unmet_ag + 2*unmet_dom).^2;
 
 %-- Compute cost-to-go given by Bellman function --
 H_ = interp1( discr_s , H_ , s_next(:), 'linear', 'extrap' ) ;
@@ -66,11 +64,30 @@ H_ = reshape( H_, n_q, n_u );
 cdf_q      = logncdf( discr_q , mi_q , sigma_q );  
 p_q        = diff(cdf_q);                          
 p_diff_ini = 1-sum(p_q);                           
-p_diff     = [ p_diff_ini ; p_q];                 
+p_diff     = [ p_diff_ini ; p_q];
+cdf_diff = cumsum(p_diff); % cdf for discretized inflow
 
-Q     = (G + gamma.*H_)'*p_diff ;
+% for expected value:
+Q     = (G + gamma.*H_)'*p_diff ; % expected value
 H     = min(Q)                  ;
 sens  = eps                     ;
 idx_u = find( Q <= H + sens )   ;
+
+% for percentile optimization:
+prctile_opt = 0.1; % percentile to optimize for
+Q_ini = (G + gamma.*H_) ; 
+% value at desired inflow percentile
+Q = Q_ini(abs(cdf_diff-prctile_opt) == min(abs(cdf_diff-prctile_opt)),:);
+H = min(Q);
+sens  = eps;
+idx_u = find(Q <= H + sens);
+
+% Q_max = max(G + gamma.*H_); % robust, worst-case value
+% Q_min = min(G + gamma.*H_); % optimistic, best-case value
+% Q_prct = prctile(G + gamma.*H_,90)'; % 90th percentile
+% H     = min(Q_prct)             ;
+% diffValues = Q_prct - H;
+% diffValues(diffValues < 0) = inf;
+% idx_u = find(Q_prct == min(diffValues));
 
 end

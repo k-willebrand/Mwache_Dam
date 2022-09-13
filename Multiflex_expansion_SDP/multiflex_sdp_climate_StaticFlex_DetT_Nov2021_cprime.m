@@ -498,7 +498,7 @@ if runParam.calcShortage
                 end
                 
                 stateMsg = strcat('s_p =', num2str(index_s_p), '/ ', num2str(length(s_P_abs)), ', s_t=', num2str(index_s_t), '/  ',  num2str(length(s_T_abs)));
-                disp(stateMsg)
+                %disp(stateMsg)
 
             end
         end
@@ -527,13 +527,15 @@ if runParam.calcShortage
         save(savename_shortageCost, 'shortageCost', 'yield', 'unmet_ag', 'unmet_dom', 'unmet_ag_squared', 'unmet_dom_squared','desal_opex')
     end
 else % use the pre-calculated shortage cost files to fast-track calculations
+    %folder_shortageCost = 'May07post_process_sdp_reservoir_results_linearCost/';
+    folder_shortageCost = 'Nov02post_process_sdp_reservoir_results/';
     
     % Preallocate final shortage cost matrix
     shortageCost = NaN(M_T_abs, M_P_abs, length(storage), N);
     if runParam.optReservoir % shortage costs from adaptive reservoir operations via SDP
         for i=1:length(storage)
             s_state = string(storage(i));
-            s_state_filename = strcat('sdp_adaptive_shortage_cost_s',s_state,'.mat');
+            s_state_filename = strcat(folder_shortageCost,'sdp_adaptive_shortage_cost_s',s_state,'.mat');
             shortageCostDir = load(s_state_filename,'shortageCost');
             shortageCost_s_state = shortageCostDir.shortageCost(:,18:49);
             shortageCost(:,:,i,1) = shortageCost_s_state;
@@ -541,7 +543,7 @@ else % use the pre-calculated shortage cost files to fast-track calculations
     else % shortage costs from non-adaptive reservoir operations via SDP
         for i=1:length(storage)
             s_state = string(storage(i));
-            s_state_filename = strcat('sdp_nonadaptive_shortage_cost_s',s_state,'.mat');
+            s_state_filename = strcat(folder_shortageCost,'sdp_nonadaptive_shortage_cost_s',s_state,'.mat');
             shortageCostDir = load(s_state_filename,'shortageCost');
             shortageCost_s_state = shortageCostDir.shortageCost(:,18:49);
             shortageCost(:,:,i,1) = shortageCost_s_state;
@@ -634,7 +636,7 @@ for t = linspace(N,1,N)
                     a = a_exp_thisPeriod(index_a);
                     
                     stateMsg = strcat('t=', num2str(t), ', st=', num2str(st), ', sp=', num2str(sp), ', sc=', num2str(sc), ', a=', num2str(a));
-                    disp(stateMsg)
+                    %disp(stateMsg)
 
                     % Calculate costs 
                     

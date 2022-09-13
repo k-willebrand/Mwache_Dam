@@ -17,6 +17,10 @@ end
 
 %load('dam_cost_model')
 load('new_dam_cost_model')
+%load('new_dam_cost_model_inc')
+%load('new_dam_cost_model_red')
+%load('new_dam_cost_model_inc25')
+%load('new_dam_cost_model_red25')
 
 
 % Make sure input storage volume is in dam cost lookup table
@@ -27,11 +31,15 @@ end
 % Upfront dam cost
 index = find(costmodel.storage == storage);
 dcost = costmodel.dam_cost(index);
+%dcost = dcost + 0.003*(storage - 50)*costmodel.dam_cost(find(costmodel.storage == 50));
 
 %add capital cost if using flex dam
 if flex_storage > 0
     added_storage = flex_storage - storage;
     dcost = dcost * (1 + percFlex*added_storage/50); % percent higher cost in reference to 50 MCM guideline
+    
+    %dcost = dcost + 0.10*costmodel.dam_cost(find(costmodel.storage == 50));
+    %dcost = dcost * (1 + percFlex); % option 2
 end
 
 % Expansion costs if increase height

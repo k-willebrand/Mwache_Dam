@@ -10,11 +10,11 @@
 
 % DESCRIPTION:
 % Calculate shortage costs and unmet demands using an SDP adaptive or
-% non-adaptive operating policy. To run this script, update the storage 
-% values (can be an array), date, and filepath. Set the values for runParam, 
+% non-adaptive operating policy. To run this script, update the storage
+% values (can be an array), date, and filepath. Set the values for runParam,
 % costParam, climParam, and sys_param fields accordingly.
 
-% NOTE: For climate-adaptive operations, set runParam.adaptiveOps = true 
+% NOTE: For climate-adaptive operations, set runParam.adaptiveOps = true
 % else set runParam.adaptiveOps = false. Set runParam.adaptiveOps in
 % outside and within the parallized loop.
 
@@ -34,7 +34,7 @@ else
 end
 
 addpath(genpath(projpath))
-mkdir('Nov02sdp_reservoir_ops_SteadyState')
+mkdir('Apr08sdp_reservoir_ops_SteadyState')
 
 addpath('data')
 addpath('SDP_code')
@@ -43,25 +43,28 @@ addpath('SDP_reservoir_ops')
 %% Set run parameters for shortage cost calculations
 
 % Define reservoir capacities (can be an array of capacities)
-storage_vals = [30]; % set reservoir capacities (MCM)
+storage_vals = [70 80 120 130]; % set reservoir capacities (MCM)
 
-date = '031122'; % set date for save name
+date = '040622'; % set date for save name
 
 % Keani works with 66 to 97 mm/month; Jenny considers 49 to 119 mm/month
 s_T_abs = [26.25, 26.75, 27.25, 27.95, 28.8]; % deg. C
 s_P_abs = 49:1:119; % expanded state space [mm/month]
 %s_P_abs = 66:1:97; % unexpanded state space [mm/month]
 
-load('runoff_by_state_02Nov2021.mat'); % Jenny's final updated de-trended data [49:1:119] mm/month
+%load('runoff_by_state_02Nov2021.mat'); % Jenny's final updated de-trended data [49:1:119] mm/month
+load('Runoff_NoExtremes_98perc_invCDF_8Apr2022');
 
 % number of temperature and precipation states to calculate shortage costs
 num_T_states = size(runoff,1); % temperature states
-num_P_states = size(runoff,2); % precipitation states
+s_P_subset = [58,62,66,70,74,78]; % subset of precipitation states to test
+%num_P_states = size(runoff,2); % precipitation states
+num_P_states = length(s_P_subset); % precipitation states
 
 if ~isempty(getenv('SLURM_JOB_ID'))
-     %poolobj = parpool('local', str2num(getenv('SLURM_NTASKS')));
-     poolobj = parpool('local', str2num(getenv('SLURM_CPUS_PER_TASK')));
-     fprintf('Number of workers: %g\n', poolobj.NumWorkers)
+    %poolobj = parpool('local', str2num(getenv('SLURM_NTASKS')));
+    poolobj = parpool('local', str2num(getenv('SLURM_CPUS_PER_TASK')));
+    fprintf('Number of workers: %g\n', poolobj.NumWorkers)
 end
 
 % Define total reservoir capacity and dead storage (MCM)
@@ -70,12 +73,12 @@ for ss=1:length(storage_vals)
     storage = storage_vals(ss); % reservoir capacity (MCM)
     dead_storage = 20; % MCM
     
-    for s_P = 1:num_P_states %18:49 %1:num_P_states
-   
-        P_state = s_P;
+    parfor s_P = 1:num_P_states %18:49 %1:num_P_states
+        
+        %P_state = s_P;
+        P_state = find(s_P_abs == s_P_subset(s_P));
         
         %% calculate average shortage costs from the optimal policy for each climate state
-        
         for s_T = 1:num_T_states
             
             T_state = s_T;
@@ -145,9 +148,7 @@ for ss=1:length(storage_vals)
             % discretization of variables' domain (Hoa Binh case: ns=68, nu=17, nq=101)
             grids.discr_s = [0:1:(storage-dead_storage)]'; % MCM (effective storage)
             grids.discr_u = [[0:3:max(demand,[],'all')+env_flow+10],[125:100:3000],[3500:1000:9560]]' ; % MCM/Y
-            %grids.discr_q = [[0:3:max([prctile(runoff{1,71,1},80))],[450:50:1000],[1100:1000:max(runoff{1,71,1},[],'all')+1000]]' ; % MCM/Y
-            %grids.discr_q = [[0:3:max(prctile(runoff{1,71,1},50))],[max(prctile(runoff{1,71,1},50)+50:50:max(prctile(runoff{1,71,1},75)))],[max(prctile(runoff{1,71,1},75))+1000:1000:max(runoff{1,71,1},[],'all')+1000]]' ; % MCM/Y
-            grids.discr_q = [[0:3:max(prctile(runoff{1,71,1},80))],[max(prctile(runoff{1,71,1},80))+50:50:max(prctile(runoff{1,71,1},85))],[max(prctile(runoff{1,71,1},85))+50:1000:max(runoff{1,71,1},[],'all')+1000]]' ; % MCM/Y
+            grids.discr_q = [[0:3:max(prctile(runoff{1,71,1},80))],[450:50:1000],[1100:1000:max(runoff{1,71,1},[],'all')+1000]]' ; % MCM/Y
             sys_param.algorithm = grids;
             sys_param.integration_substep = 300; % number of mass balance monthly substeps
             
@@ -250,9 +251,9 @@ for ss=1:length(storage_vals)
             
             if runParam.saveOn
                 if runParam.adaptiveOps
-                    filename = strcat('Nov02sdp_reservoir_ops_SteadyState/Nov022021adaptive_domagCost231_SSTest','_st',num2str(s_T),'_sp',num2str(s_P),'_s',string(storage),'_',date,'.mat');
+                    filename = strcat('Apr08sdp_reservoir_ops_SteadyState/Apr082021adaptive_domagCost231_SSTest','_st',num2str(s_T),'_sp',num2str(s_P),'_s',string(storage),'_',date,'.mat');
                 else
-                    filename = strcat('Nov02sdp_reservoir_ops_SteadyState/Nov022021nonadaptive_domagCost231_SSTest','_st',num2str(s_T),'_sp',num2str(s_P),'_s',string(storage),'_',date,'.mat');
+                    filename = strcat('Apr08sdp_reservoir_ops_SteadyState/Apr082021nonadaptive_domagCost231_SSTest','_st',num2str(s_T),'_sp',num2str(s_P),'_s',string(storage),'_',date,'.mat');
                 end
                 parsave(filename, shortageCost, objective_ts,  storage_ts, unmet_ag_ts, unmet_dom_ts);
             end
