@@ -318,7 +318,7 @@ if runParam.runTPts
     T_ts = cell(M_T_abs,N);
     P_ts = cell(M_P_abs,N);
 
-    [Tanom, Panom, model_rand, year_rand] = mean2TPtimeseriesMJL_3(1, runParam.steplen, climParam.numSampTS); 
+    [Tanom, Panom, model_rand, year_rand] = mean2TPtimeseriesMJL_2(1, runParam.steplen, climParam.numSampTS); 
     for t = 1:N
 
         for i = 1:M_T_abs  
