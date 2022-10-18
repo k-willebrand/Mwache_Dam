@@ -1,7 +1,7 @@
-%% KL Divergence Post Processing: This could be an alternative to just running 
+%% KL Divergence Post Processing: This is an alternative to just running 
 % the Bayesian Quant Learning file, and to instead take X number of
 % instances from the simulation and to calculate the KL divergence values
-% for them
+% for them. Can run on local drive or Sherlock.
 % August 2022
 
 % Notes: Run 1x for high learning and 1x for low learning
