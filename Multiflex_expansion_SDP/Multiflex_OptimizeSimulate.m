@@ -20,7 +20,7 @@ addpath(genpath(projpath))
 jobid = getenv('SLURM_JOB_ID');
 
 % Get date for file name when saving results 
-datetime=date;%datestr(now);
+datetime=date;
 datetime=strrep(datetime,':','_'); %Replace colon with underscore
 datetime=strrep(datetime,'-','_');%Replace minus sign with underscore
 datetime=strrep(datetime,' ','_')%Replace space with underscore
@@ -33,21 +33,16 @@ storageAll = 50:10:150;
 m = 1;
 %% 
 for m=1:length(learning_scen)
-     %cd('/Users/jenniferskerker/Documents/GradSchool/Research/Project1/Code/Models/Mwache_Dam/Synthetic_TransMatrices/TMs_21Oct2021');
+     % import transition matrix data-- UPDATE THIS BASED ON FILE LOCATION
+     % AND FILE
      cd('/Users/jenniferskerker/Documents/GradSchool/Research/Project1/Code/Models/Mwache_Dam/Synthetic_TransMatrices/Bayes_July2022');
-     %TM_filename = strcat('T_Temp_Precip_',string(learning_scen{m}),'.mat'); %mod_T_... 
-     TM_filename = strcat('T_Temp_Precip_V2_',string(learning_scen{m}), '_July2022_Bayes','.mat'); %mod_T_... 
+     TM_filename = strcat('T_Temp_Precip_V2_',string(learning_scen{m}), '_July2022_Bayes','.mat');
      TM = strcat('T_Temp_Precip_',string(learning_scen{m}));
-     %TM_filename = filesExt{m}
      load(TM_filename);
      
-     scenName = '3DR_RunoffNov_BayesTMs_V2_Plan50_NoConst_6e-6';
-     %cd('/Users/jenniferskerker/Documents/GradSchool/Research/Project1/Code/Models/Mwache_Dam/Synthetic_TransMatrices/Test_CornerCases_15Nov2021');
-     %load('T_Temp_Precip_ExtHigh', 'T_Precip');
-     %load('Extreme_High_Learning_Mod_22Mar2022_test', 'T_Precip');
-     %load('T_Temp_Precip_Neg_shift25', 'T_Precip');
-     %load('T_Temp_Precip_RCP85B_KW.mat', 'T_Precip');
-  %   disp(TM);
+     % UPDATE THIS BASED ON WHAT YOU WANT THE FILENAME TO BE
+     scenName = '3DR_RunoffNov_BayesTMs_V2_Plan50_NoConst_6e-6'; 
+     
 
     % Step 1. Find the optimal flexible dam size
     bestVal_flex = inf;
@@ -59,6 +54,7 @@ for m=1:length(learning_scen)
                     num2str(g), ', h=', num2str(h));
                 disp(stateMsg);
                 
+                  % this piece adds constraints on the flexible dam designs
                   if (j+h*10*g) > 150
                       disp('Flex design surpasses max capacity');
                   %elseif (j+h*10*g) < ceil(1.2*j/10)*10 % if false, then this combination is ok
@@ -68,7 +64,7 @@ for m=1:length(learning_scen)
                     %disp('Flex design max expansion less than 30% of initial cap'); %50% of initial capacity');
                    %elseif (j+h*10*g) ~= 150 & (j+h*10*g) ~= ceil(1.5*j/10)*10
                      %  disp('Flex design max expansion not 150 MCM or less than 150% of initial cap');
-%                        
+                        
                   else %if (j*1.3) >= (j+h*10*g)
                 
                     x(1) = 1; % optParam.optFlex
@@ -78,10 +74,13 @@ for m=1:length(learning_scen)
                     x(5) = 50; % optParam.staticCap
                     x(6) = false; % runParam.forwardSim
                     x(7) = true; % runParam.runSDP
+                    % UPDATE THESE PARAMS BASED ON DISCOUNT
+                    % RATE/ASSUMPTIONS
                     x(8) = 0.03; % costParam.discountrate
                     x(9) = 0.0; % costParam.PercFlex % .075
                     x(10) = 0.5; % costParam.PercFlexExp % .15
                     % 3% params, flex design: .075, 0.15, 0% params: 0, 0.25 (or 0.5)
+                    x(11) = 6e-6; % cPrime: 3% params- 6e-6; 0% params- 1.5e-6
 
                     run('multiflex_sdp_climate_StaticFlex_DetT_StateSpace');
                     P0 = find(s_P_abs == 77)
@@ -112,9 +111,12 @@ for m=1:length(learning_scen)
             x(5) = j; % optParam.staticCap
             x(6) = false; % runParam.forwardSim
             x(7) = true; % runParam.runSDP
+            % UPDATE THESE PARAMS BASED ON DISCOUNT
+            % RATE/ASSUMPTIONS
             x(8) = 0.03; % costParam.discountrate
             x(9) = 0.0; % costParam.PercFlex % .075
             x(10) = 0.5; % costParam.PercFlexExp % .15
+            x(11) = 6e-6; % cPrime: 3% params- 6e-6; 0% params- 1.5e-6
 
             run('multiflex_sdp_climate_StaticFlex_DetT_StateSpace');
             val = V(1, P0, 1, 1);
@@ -131,9 +133,8 @@ for m=1:length(learning_scen)
         'DR');
     save(file_name, 'allV_static_short', 'allV_static', 'allV_static_dam', ...
         'allV_flex_short', 'allV_flex', 'allV_flex_dam');
-    %toc
 
-    %% 3. Run the SDP with the combined matrices and optimal dam sizes
+    %% 3. Run the SDP with the optimal dam sizes from steps 1 and 2
 
     % get optimal values
     x(1) = 0; % optParam.optFlex
@@ -143,15 +144,17 @@ for m=1:length(learning_scen)
     x(5) = bestAct_static(5); % optParam.staticCap
     x(6) = true; %false; % runParam.forwardSim
     x(7) = true; % runParam.runSDP
+    % UPDATE THESE PARAMS BASED ON DISCOUNT
+    % RATE/ASSUMPTIONS
     x(8) = 0.03; % costParam.discountrate
-    x(9) = 0.0; %0.075; % costParam.PercFlex
+    x(9) = 0.0; % costParam.PercFlex
     x(10) = 0.5; % costParam.PercFlexExp
+    x(11) = 6e-6; % cPrime: 3% params- 6e-6; 0% params- 1.5e-6
 
     run('multiflex_sdp_climate_StaticFlex_DetT_StateSpace');
     location = strcat(projpath, '/Multiflex_expansion_SDP/Results.nosync');
     cd(location)
     new_folder = strcat(learning_scen{m}, '_learning_scenario');
-    %mkdir(strcat(location, '/', new_folder));
     cd(new_folder);
     file_name = strcat('OptimalPolicies_', num2str(learning_scen{m}), '_', scenName, '_', datetime); %, '_disc', num2str(d*100));
     save(file_name);

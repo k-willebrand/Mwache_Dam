@@ -112,10 +112,6 @@ runParam.runSDP = x(7);
 % Number of years to use in GCMs to generate T, P, streamflow time series
 runParam.steplen = 20; 
 
-% Set Emissions Scenario
-%emisScenario = {'RCP19' 'RCP26' 'RCP34' 'RCP45' 'RCP6' 'RCP7' 'RCP85'};
-%runParam.setPathway = emisScenario{7};
-
 % If true, simulate runoff time series from T, P time series using CLIRUN. If false, load saved.
 runParam.runRunoff = false; 
 
@@ -151,7 +147,7 @@ runParam.desalOn = false;
 runParam.desalCapacity = [60 80];
 
 % If using pre-saved runoff time series, name of .mat file to load
-runParam.runoffLoadName = 'runoff_by_state_06Oct2021';%'runoff_by_state_June16_knnboot_1t';
+runParam.runoffLoadName = 'runoff_by_state_06Oct2021';
 
 % If true, save results
 runParam.saveOn = false;
@@ -181,8 +177,7 @@ costParam.agShortage = 0.28; %Fletcher et al. (2019) utilized 0
 
 % Use the parameter c' to scale the quadratic shortage cost formulation to
 % reflect the average water unit cost reported by the FAO for Africa
-costParam.cPrime = 6e-6; % 6e-6 for 3% DR % 1.5e-6; % for 0% DR
-%6e-6; % for 3% DR % changes magnitude of shortage costs
+costParam.cPrime = x(11); % 6e-6 for 3% DR % 1.5e-6; % for 0% DR
 
 % Discount rate
 costParam.discountrate = x(8);
@@ -292,9 +287,6 @@ if runParam.calcTmat
     T_name = strcat('T_Temp_Precip_', runParam.setPathway) % save a different transition matrix file for different emissions pathways
     save(T_name, 'T_Temp', 'T_Precip')
 else
-    %addpath('/Users/jenniferskerker/Documents/GradSchool/Research/Project1/Code/Models/Fletcher_2019_Learning_Climate/SDP');
-    %load('T_Temp_Precip_RCP85B_KW', 'T_Precip') % updated from Jenny- RCP85B
-    %T_Precip; 
     T_Temp = deterministicTempMatrix(N);
 end
 
@@ -334,14 +326,14 @@ if runParam.runTPts
     end
 
     savename_runoff = strcat('runoff_by_state_', jobid,'_', datetime);
-    %save(savename_runoff, 'T_ts', 'P_ts')
+    save(savename_runoff, 'T_ts', 'P_ts')
 
 end
-%load('/Users/jenniferskerker/Documents/GradSchool/Research/Project1/Code/Models/Mwache_Dam/Multiflex_expansion_SDP/runoff_by_state__19_Jul_2021_11_13_30_update.mat');
+
 %%
 % Use CLIRUN hydrological model to simulate runoff monthly time series for
 % each T,P time series
-%tic
+
 if runParam.runRunoff 
 
     % Generate runoff timeseries - different set for each T,P combination
@@ -366,7 +358,7 @@ if runParam.runRunoff
             % loop over available precip states
             index_s_p_thisPeriod = index_s_p_time{t}; 
             for index_s_p = index_s_p_thisPeriod
-                disp(index_s_p); %toc;  % added by JS for testing
+                disp(index_s_p);
                 % Call CLIRUN streamflow simulator
                  runoff_temp{index_s_p} = ...
                      TP2runoff(repmat(T_ts{index_s_t,t}, [1 N]),...
@@ -510,17 +502,12 @@ else % use the pre-calculated shortage cost files to fast-track calculations
     if runParam.optReservoir % DDP calculated shortage costs
         for i=1:length(storage)
             s_state = string(storage(i));
-            %s_state_filename = strcat('adaptive_shortage_cost_linear_06Apr2022_s', s_state, '.mat');
-            %s_state_filename = strcat('sdp_adaptive_shortage_cost_2Xtest_s',s_state,'.mat');
-            %s_state_filename = strcat('sdp_adaptive_shortage_cost_22Apr_s',s_state,'.mat');
             s_state_filename = strcat('sdp_adaptive_shortage_cost_s',s_state,'.mat');
-            %s_state_filename = strcat('sdp_adaptive_shortage_cost_domagCost231_s',s_state,'.mat');
             shortageCostDir = load(s_state_filename,'shortageCost');
-            indS = find(storageAll == storage(i)); % added for testing
+            indS = find(storageAll == storage(i));
             shortageCost_s_state = shortageCostDir.shortageCost(:,:); % 18:49
             
             shortageCost(:,:,i,1) = shortageCost_s_state;
-            %shortageCost(:,:,i,1) = shortageCost_s_state * factors(indS);
             
             % load shortage volumes (unmet dom and ag) and compile into
             % mean shortage volumes
@@ -538,29 +525,17 @@ else % use the pre-calculated shortage cost files to fast-track calculations
     else % greedy algorithm calculated shortage costs
         for i=1:length(storage)
             s_state = string(storage(i));
-            s_state_filename = strcat('sdp_nonadaptive_shortage_cost_s',s_state,'.mat'); %Nov 2021 data
-            %s_state_filename = strcat('sdp_nonadaptive_shortage_cost_domagCost231_s',s_state,'.mat'); % Oct 2021 data
+            s_state_filename = strcat('sdp_nonadaptive_shortage_cost_s',s_state,'.mat');
             shortageCostDir = load(s_state_filename,'shortageCost');
-            shortageCost_s_state = shortageCostDir.shortageCost(:,:); %18:49
+            shortageCost_s_state = shortageCostDir.shortageCost(:,:); 
             shortageCost(:,:,i,1) = shortageCost_s_state;
-            % load shortage volumes (unmet dom and ag) and compile into
-            % mean shortage volumes
-%             s_state_volume_filename = strcat('sdp_adaptive_shortage_volumes_s', s_state, '.mat');
-%             shortageVolDir = load(s_state_volume_filename, 'unmet_ag', 'unmet_dom');
-%             shortageVol_Ag = shortageVolDir.unmet_ag;
-%             shortageVol_Dom = shortageVolDir.unmet_dom;
-%             for w=1:M_T_abs
-%                 for k=1:M_P_abs
-%                     shortageVol(w,k,i) = mean(shortageVol_Ag{w,k}(241:end,:) + ...
-%                         shortageVol_Dom{w,k}(241:end,:), 'all');
-%                 end
-%             end
+          
         end
     end
 end
 
 % multiply by c' parameter for economic cost model
-shortageCost = shortageCost.*costParam.cPrime; % JS moved this line for working w/ sdp
+shortageCost = shortageCost.*costParam.cPrime;
 %% Solve SDP optimal policies using backwards recursion
 
 if runParam.runSDP
