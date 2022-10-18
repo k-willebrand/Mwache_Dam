@@ -45,12 +45,13 @@ if KMS(1) == months1 % CHECKING FOR A DYSFUNCTIONS SOLVE
     wb = runoff_II(z);
     wb = wb';   % Time series for calibration period
      
-    xout = nan(NYRS*12,2);
-    xout(:,1) = wb(:,4);%Make monthly mean Model
+    xout = nan(NYRS*12/4,2);
+    xout(:,1) = wb(505:672,4);%Make monthly mean Model % updated by JS for testing
     xout(:,2) = OBS;% 12 monthlty mean UNH
     
     % ESTABLISH THE OBJECTIVE FUNCTION
-    obj = sum((xout(:,2)-xout(:,1)).^2);
+    %count = xout(:,1)>1.0;
+    obj = sum((xout(:,2)-xout(:,1)).^2);% + sum(count)*10;
     
     if ~isreal(obj),obj = 100000.; end
     if isnan(obj),obj = 100000.; end

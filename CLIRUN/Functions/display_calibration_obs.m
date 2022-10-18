@@ -26,6 +26,12 @@ if postProcess
     OBS = runoff_mwache; % mm/day
     flowNames = {'Mwache river'};
 
+    % added by JS for testing
+    NYRS = NYRS * 4;
+    months = months * 4;
+    PET = repmat(PET, 1, 4);
+    PRECIP_0 = repmat(PRECIP_0, 1, 4);
+    %precip_day = repmat(precip_day, 1, 4);
 
     if usePton
        load('InputData/Mwache_hydro_pton') 
@@ -71,10 +77,10 @@ options = odeset('NonNegative',[1 2]);
     if MTHavgCalib==2
         xout = zeros(12,2);
         xout(:,1) = mean( reshape( wb(:,4)', 12, []), 2)';
-    else xout = zeros(length(wb),2);
+    else xout = zeros(length(wb)/4,2);
     % ODE SOVLERS OUTPUT TIME O - STRIPPING OFF TIME ZERO 1 to 12 * years
     % wb = [rss1; dr1; rs1; RunOff];
-    xout(:,1) = wb(:,4)'; % RunOff - total runoff
+    xout(:,1) = wb(505:672,4)'; % RunOff - total runoff
     end
     
     xout(:,2) = OBS;
@@ -103,12 +109,21 @@ options = odeset('NonNegative',[1 2]);
     disp('~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-')
     
         %to plot..TOTAL runoff v. Observes         %JMS
-   figure;
+   figure('Position', [560 450 750 500]);
    subplot(2,1,1)
-   plot(xout(:,1:2), 'LineWidth', 1),  legend({'Mdl R','obs R'}, 'Location', 'northwest'); %JMS
-   xlabel('month'), ylabel('runoff')
+   plot(xout(:,1:2), 'LineWidth', 2);
+   a = get(gca,'XTickLabel');  
+   set(gca,'XTickLabel',a,'fontsize',16)
+   set(gca,'XTickLabelMode','auto')
+   legend({'Model','Observed'}, 'Location', 'northwest', 'FontSize', 18); %JMS
+   xlabel('Month', 'FontSize', 16);
+   ylabel('Runoff (mm/d)', 'FontSize', 16);
    legend('boxoff')
-   ylim([0 3.5])
+   ylim([0 1.5])
+
+%    title([strcat('Mean Annual Runoff:', {' '}, num2str(mar_mdl, 3), ', Yield:', {' '}, num2str(yield_mdl, 2),...
+%         ', RMSE Point:', {' '}, num2str(rmse_pt, 2),{' '}, ', RMSE Mean:', {' '}, num2str(rmse_mn, 2))], ...
+%         'FontSize', 11);
    
    % Do same error analysis with monthly means instead of individual points
    xout1_mean = mean( reshape( xout(:,1),12,[]) , 2 )';%Make monthly mean Model
@@ -124,12 +139,26 @@ options = odeset('NonNegative',[1 2]);
     disp('~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-')
     
     subplot(2,1,2)
-    b = bar(1:12, [xout1_mean; xout2_mean]'),  legend({'Mdl mean R','obs mean R'},'Location', 'northwest'); %JM
-    xlabel('month'), ylabel('runoff')
+    b = bar(1:12, [xout1_mean; xout2_mean]');  
     legend('boxoff')
-    ylim([0 0.8])
-    suptitle(strcat('Mar:', num2str(mar_mdl),{' '}, 'Yld:', num2str(yield_mdl),{' '}, 'RMSE pt:', num2str(rmse_pt),{' '}, 'RMSE mn:', num2str(rmse_mn)))
-
+    a = get(gca,'XTickLabel');  
+    set(gca,'XTickLabel',a,'fontsize',16)
+    set(gca,'XTickLabelMode','auto')
+    xlabel('Month', 'FontSize', 16);
+    ylabel('Runoff (mm/d)', 'FontSize', 16);
+    legend({'Model Monthly Mean','Obs. Monthly Mean'},'Location', 'northwest', 'FontSize', 18); %JM
+    xticklabels({'J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'});
+    ylim([0 0.4])
+    title('Monthly Averages', 'FontSize', 18);
+    %sgtitle('Calibration Results');
+    sgtitle(strcat('RMSE Point:', {' '}, num2str(rmse_pt, 2),{' '}, ', RMSE Mean:', {' '}, num2str(rmse_mn, 2)),...
+        'FontSize', 18);
+    
+    
+    % add line to save data
+%     datetime
+%     save(['CLIRUN/OutputData/data/Calibration_',flowNames{bas}, '_', num2str(datetime),'.mat'],'x','xout',...
+%         'rmse_pt', 'rmse_mn', 'err', 'xout1_mean', 'xout2_mean', 'mar_mdl', 'yield_mdl');
     
     if ~postProcess
     saveas(1,['OutputData/plots/calib_','_basin',num2str(bas),'_',flowNames{bas},'.jpg'])

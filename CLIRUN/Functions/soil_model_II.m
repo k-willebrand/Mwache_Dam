@@ -2,10 +2,10 @@ function xdot = soil_model_II(t,x)
 
 global precip_day PET % CALCULTED VALUES 
 global ku  kp  kl lm  sat over % MODEL PARAMETERS
-
+%disp(t)
 T=floor(t) + 1;
-if t == 168
-    T = 168;
+if t==672%t == 168
+    T=672;%T = 168;
 end
 
 %pp= precip_day(T);

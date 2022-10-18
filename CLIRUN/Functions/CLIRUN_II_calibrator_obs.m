@@ -30,6 +30,12 @@ PRECIP_0 = P0_date_lin' ./ repmat(days_adj,1,NYRS); % Convert from mm/m to mm/da
 OBS = runoff_mwache; % mm/day
 flowNames = {'Mwache river'};
 
+% added by JS for testing
+NYRS = NYRS * 4;
+months = months * 4;
+PET = repmat(PET, 1, 4);
+PRECIP_0 = repmat(PRECIP_0, 1, 4);
+%precip_day = repmat(precip_day, 1, 4);
 
 if usePton
    load('InputData/Mwache_hydro_pton') 
@@ -119,8 +125,9 @@ for bas=1:1 %nbasins
 %     
 %     PET = [ pet(sta,timeFrame) , 0 ];
 %     PRECIP_0 = [ PRECIPTS(sta,timeFrame)./repmat(days,1,NYRS) , 0 ];% make mm/day
-
-    options = psoptimset('CompletePoll','on', 'MaxIter',100,'Display','iter');
+    % updated from psoptimset
+    %options = psoptimset('CompletePoll','on', 'MaxIter',100,'Display','iter');
+    options = optimoptions('patternsearch', 'UseParallel',true, 'MaxIter',100,'Display','iter');
     
     %Message
     if MTHavgCalib, disp(['CALIBRATING ... basin ',num2str(bas),' month calib']);
@@ -146,7 +153,7 @@ for bas=1:1 %nbasins
     
     X_results = x;
        
-    display('CALIBRATION FINISHED');
+    disp('CALIBRATION FINISHED');
     disp(['> Finished At: ',datestr( now )]);
     disp(['coeff: ',num2str(x,'%10.2e')]);
     timeElapsed=toc;
@@ -155,7 +162,7 @@ for bas=1:1 %nbasins
     datetime=strrep(datetime,':','_'); %Replace colon with underscore
     datetime=strrep(datetime,'-','_');%Replace minus sign with underscore
     datetime=strrep(datetime,' ','_');%Replace space with underscore
-    save(['OutputData/data/',datetime,'.mat'],'X_results');
+    save(['CLIRUN/OutputData/data/',datetime,'.mat'],'X_results', 'init');
     
      display_calibration_obs; 
      %display_calibration_UNH;
