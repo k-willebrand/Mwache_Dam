@@ -24,22 +24,13 @@ datetime=date;%datestr(now);
 datetime=strrep(datetime,':','_'); %Replace colon with underscore
 datetime=strrep(datetime,'-','_');%Replace minus sign with underscore
 datetime=strrep(datetime,' ','_')%Replace space with underscore
-%%
-%tic
 
-% Step 0. Load learning scenario transition matrix data
-
+%% Step 0. Load learning scenario transition matrix data
 learning_scen = {'High', 'Low'}; %, 'Med'
-%learning_scen = {'ExtHigh', 'No'};
 climate_scen = {'Wet', 'Mod', 'Dry'};
-%sim_scen = {'High_Dry', 'High_Mod', 'High_Wet', 'Low_Dry', 'Low_Mod', 'Low_Wet'};
-% 'Med_Dry', 'Med_Mod', 'Med_Wet'
 storageAll = 50:10:150;
-%factors = 1:-0.03:0.7;
-%filesExt = {'Wet67Dry33_High_Learning_Test_02May2022.mat', 'Extreme_High_Learning_Mod_02May2022.mat', 'No_Learning_Test_13Jan2022.mat'};
 
 m = 1;
-%learning_scen = 'NoLowLearn';
 %% 
 for m=1:length(learning_scen)
      %cd('/Users/jenniferskerker/Documents/GradSchool/Research/Project1/Code/Models/Mwache_Dam/Synthetic_TransMatrices/TMs_21Oct2021');
@@ -90,7 +81,7 @@ for m=1:length(learning_scen)
                     x(8) = 0.03; % costParam.discountrate
                     x(9) = 0.0; % costParam.PercFlex % .075
                     x(10) = 0.5; % costParam.PercFlexExp % .15
-                    % 3% params: .075, 0.15, 0% params: 0, 0.25 (or 0.5)
+                    % 3% params, flex design: .075, 0.15, 0% params: 0, 0.25 (or 0.5)
 
                     run('multiflex_sdp_climate_StaticFlex_DetT_StateSpace');
                     P0 = find(s_P_abs == 77)
@@ -103,16 +94,12 @@ for m=1:length(learning_scen)
                         allV_flex_short = Vs;
                         allV_flex_dam = Vd;
                     end
-                  %else
-                    %disp('flex size also not feasible');
                 end
             end
         end
     end
-    %toc
 
-    %%
-    % 2. Find the optimal static dam size
+    %% 2. Find the optimal static dam size
     bestVal_static = inf;
 
     for j=50:10:150
@@ -146,8 +133,7 @@ for m=1:length(learning_scen)
         'allV_flex_short', 'allV_flex', 'allV_flex_dam');
     %toc
 
-    %%
-    % 3. Run the SDP with the combined matrices and optimal dam sizes
+    %% 3. Run the SDP with the combined matrices and optimal dam sizes
 
     % get optimal values
     x(1) = 0; % optParam.optFlex
@@ -170,29 +156,4 @@ for m=1:length(learning_scen)
     file_name = strcat('OptimalPolicies_', num2str(learning_scen{m}), '_', scenName, '_', datetime); %, '_disc', num2str(d*100));
     save(file_name);
     
-    %%
-    % 4. Run the forward simulation with wet, dry, moderate matrices
-    % for the optimal dam sizes and combined policies
-    % October 2021: try simulating all 9 scenarios
-    
-%     % update necessary parameters
-%     x(6) = true; % runParam.forwardSim
-%     x(7) = false; % runParam.runSDP
-%     
-%     % Step 4a. Run each learning climate scenario
-%     for scen=1:3 
-%         TM_filename = strcat('T_Temp_Precip_',string(sim_scen{scen+(m-1)*3}),'.mat');
-%         TM = strcat('T_Temp_Precip_',string(sim_scen{scen}));
-%         %load('T_Temp_Precip_ExtHighWet.mat', 'T_Precip');
-%         load(TM_filename);
-%         disp(sim_scen{scen+(m-1)*3});
-% 
-%         run('multiflex_sdp_climate_StaticFlex_DetT_StateSpace');
-%         file_name = strcat('Simulation_', learning_scen{m}, '_Policy_', sim_scen{scen+(m-1)*3}) %, '_disc', num2str(d*100));
-%         save(file_name);
-%     end
-    
-    %toc
-%end
-%toc
 end
